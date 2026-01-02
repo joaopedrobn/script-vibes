@@ -674,7 +674,7 @@ CreateInput(PageTroll, "Player...", function(text)
     trollTarget = text
 end)
 
-CreateToggle(PageTroll, "Grudar (Stick)", function(val)
+CreateToggle(PageTroll, "Grudar", function(val)
     getgenv().Settings.StickTarget = val
     if val then
         task.spawn(function()
@@ -699,7 +699,7 @@ CreateToggle(PageTroll, "Grudar (Stick)", function(val)
     end
 end, false)
 
-CreateToggle(PageTroll, "Assistir (Spectate)", function(val)
+CreateToggle(PageTroll, "Assistir", function(val)
     getgenv().Settings.SpectateTarget = val
     if val then
         task.spawn(function()
