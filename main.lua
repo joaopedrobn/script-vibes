@@ -622,7 +622,7 @@ local PageTeleport = CreatePage("PageTeleport")
 CreateTabBtn("Teleporte", PageTeleport)
 
 local tpTarget = ""
-CreateInput(PageTeleport, "Nome do Jogador...", function(text)
+CreateInput(PageTeleport, "Player...", function(text)
     tpTarget = text
 end)
 
