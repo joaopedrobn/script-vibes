@@ -41,6 +41,8 @@ getgenv().Settings = {
 }
 
 getgenv().AutoFarm_Rejoined = nil
+getgenv().ChestIndex = 1
+getgenv().BoneIndex = 1
 
 local Theme = {
     Background = Color3.fromRGB(20, 20, 20),
@@ -486,11 +488,13 @@ local function getTargets()
     return targets
 end
 
-local function getSortedTargets(term)
+local function getSortedTargets(term1, term2)
     local t = {}
     for _, v in ipairs(Workspace:GetDescendants()) do
-        if v:IsA("Model") and (v.Name:find(term) or v.Name:lower():find(term:lower())) then
-            table.insert(t, v)
+        if v:IsA("Model") then
+            if v.Name:find(term1) or (term2 and v.Name:find(term2)) then
+                table.insert(t, v)
+            end
         end
     end
     table.sort(t, function(a,b) return a.Name < b.Name end)
@@ -545,7 +549,7 @@ local function updateESP()
                 bb.Name = "Info"
                 bb.Adornee = plr.Character.Head
                 bb.Size = UDim2.new(0, 200, 0, 100)
-                bb.StudsOffset = Vector3.new(0, 3, 0)
+                bb.StudsOffset = Vector3.new(0, 4, 0)
                 bb.AlwaysOnTop = true
                 bb.Parent = ESP_Folder
                 
@@ -693,29 +697,27 @@ CreateButton(PageTeleport, "Teleportar (Player)", function()
     end
 end)
 
-CreateSection(PageTeleport, "BAÚS (CHESTS)")
-for i=1, 10 do
-    CreateButton(PageTeleport, "Baú "..i, function()
-        local list = getSortedTargets("Bau")
-        if #list == 0 then list = getSortedTargets("Chest") end
-        
-        if list[i] and LocalPlayer.Character then
-            LocalPlayer.Character:PivotTo(list[i]:GetPivot())
+CreateButton(PageTeleport, "Ir para Próximo Baú/Chest", function()
+    local list = getSortedTargets("Bau", "Chest")
+    if #list > 0 then
+        if getgenv().ChestIndex > #list then getgenv().ChestIndex = 1 end
+        if list[getgenv().ChestIndex] and LocalPlayer.Character then
+            LocalPlayer.Character:PivotTo(list[getgenv().ChestIndex]:GetPivot())
+            getgenv().ChestIndex = getgenv().ChestIndex + 1
         end
-    end)
-end
+    end
+end)
 
-CreateSection(PageTeleport, "OSSOS (BONES)")
-for i=1, 10 do
-    CreateButton(PageTeleport, "Osso "..i, function()
-        local list = getSortedTargets("Osso")
-        if #list == 0 then list = getSortedTargets("Bone") end
-        
-        if list[i] and LocalPlayer.Character then
-            LocalPlayer.Character:PivotTo(list[i]:GetPivot())
+CreateButton(PageTeleport, "Ir para Próximo Osso/Bone", function()
+    local list = getSortedTargets("Osso", "Bone")
+    if #list > 0 then
+        if getgenv().BoneIndex > #list then getgenv().BoneIndex = 1 end
+        if list[getgenv().BoneIndex] and LocalPlayer.Character then
+            LocalPlayer.Character:PivotTo(list[getgenv().BoneIndex]:GetPivot())
+            getgenv().BoneIndex = getgenv().BoneIndex + 1
         end
-    end)
-end
+    end
+end)
 
 local PageMove = CreatePage("PageMove")
 CreateTabBtn("Movimentação", PageMove)
@@ -820,9 +822,25 @@ end, false)
 local PageGraphics = CreatePage("PageGraphics")
 CreateTabBtn("Gráficos", PageGraphics)
 
+local originalLighting = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows,
+    OutdoorAmbient = Lighting.OutdoorAmbient
+}
+
+local disabledEffects = {}
+
 CreateToggle(PageGraphics, "Fullbright (Luz Infinita)", function(val)
     getgenv().Settings.Fullbright = val
     if val then
+        originalLighting.Brightness = Lighting.Brightness
+        originalLighting.ClockTime = Lighting.ClockTime
+        originalLighting.FogEnd = Lighting.FogEnd
+        originalLighting.GlobalShadows = Lighting.GlobalShadows
+        originalLighting.OutdoorAmbient = Lighting.OutdoorAmbient
+        
         task.spawn(function()
             while getgenv().Settings.Fullbright do
                 Lighting.Brightness = 2
@@ -833,6 +851,12 @@ CreateToggle(PageGraphics, "Fullbright (Luz Infinita)", function(val)
                 task.wait(1)
             end
         end)
+    else
+        Lighting.Brightness = originalLighting.Brightness
+        Lighting.ClockTime = originalLighting.ClockTime
+        Lighting.FogEnd = originalLighting.FogEnd
+        Lighting.GlobalShadows = originalLighting.GlobalShadows
+        Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
     end
 end, false)
 
@@ -841,9 +865,17 @@ CreateToggle(PageGraphics, "Remover Blur/Efeitos", function(val)
     if val then
         for _, v in pairs(Lighting:GetChildren()) do
             if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
-                v.Enabled = false
+                if v.Enabled then
+                    v.Enabled = false
+                    table.insert(disabledEffects, v)
+                end
             end
         end
+    else
+        for _, v in pairs(disabledEffects) do
+            v.Enabled = true
+        end
+        disabledEffects = {}
     end
 end, false)
 
