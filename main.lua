@@ -23,7 +23,9 @@ getgenv().Settings = {
     AutoServerHop = false,
     ESP_Enabled = false,
     ESP_Highlight = true,
-    ESP_Names = true,
+    ESP_ShowName = true,
+    ESP_ShowUser = true,
+    ESP_ShowIcon = true,
     WalkSpeed = 16,
     JumpPower = 50,
     SpeedEnabled = false,
@@ -558,7 +560,8 @@ local function updateESP()
                 h.FillTransparency = 0.5
                 h.Parent = ESP_Folder
             end
-            if getgenv().Settings.ESP_Names then
+            
+            if getgenv().Settings.ESP_ShowName or getgenv().Settings.ESP_ShowUser or getgenv().Settings.ESP_ShowIcon then
                 local bb = Instance.new("BillboardGui")
                 bb.Name = "Info"
                 bb.Adornee = plr.Character.Head
@@ -567,27 +570,55 @@ local function updateESP()
                 bb.AlwaysOnTop = true
                 bb.Parent = ESP_Folder
                 
-                local icon = Instance.new("ImageLabel")
-                icon.Parent = bb
-                icon.BackgroundTransparency = 1
-                icon.Position = UDim2.new(0.5, -15, 0, 0)
-                icon.Size = UDim2.new(0, 30, 0, 30)
-                
-                task.spawn(function()
-                    local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
-                    if isReady then icon.Image = content end
-                end)
+                local listLayout = Instance.new("UIListLayout")
+                listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                listLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+                listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                listLayout.Parent = bb
 
-                local nameLabel = Instance.new("TextLabel")
-                nameLabel.Parent = bb
-                nameLabel.BackgroundTransparency = 1
-                nameLabel.Position = UDim2.new(0, 0, 0, 32)
-                nameLabel.Size = UDim2.new(1, 0, 0, 20)
-                nameLabel.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
-                nameLabel.TextColor3 = Color3.new(1,1,1)
-                nameLabel.TextStrokeTransparency = 0
-                nameLabel.Font = Enum.Font.GothamBold
-                nameLabel.TextSize = 14
+                if getgenv().Settings.ESP_ShowIcon then
+                    local iconContainer = Instance.new("Frame")
+                    iconContainer.BackgroundTransparency = 1
+                    iconContainer.Size = UDim2.new(0, 30, 0, 30)
+                    iconContainer.LayoutOrder = 1
+                    iconContainer.Parent = bb
+                    
+                    local icon = Instance.new("ImageLabel")
+                    icon.Parent = iconContainer
+                    icon.BackgroundTransparency = 1
+                    icon.Size = UDim2.new(1, 0, 1, 0)
+                    
+                    task.spawn(function()
+                        local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+                        if isReady then icon.Image = content end
+                    end)
+                end
+
+                if getgenv().Settings.ESP_ShowName then
+                    local nameLabel = Instance.new("TextLabel")
+                    nameLabel.Parent = bb
+                    nameLabel.BackgroundTransparency = 1
+                    nameLabel.Size = UDim2.new(1, 0, 0, 20)
+                    nameLabel.Text = plr.DisplayName
+                    nameLabel.TextColor3 = Color3.new(1,1,1)
+                    nameLabel.TextStrokeTransparency = 0
+                    nameLabel.Font = Enum.Font.GothamBold
+                    nameLabel.TextSize = 14
+                    nameLabel.LayoutOrder = 2
+                end
+
+                if getgenv().Settings.ESP_ShowUser then
+                    local userLabel = Instance.new("TextLabel")
+                    userLabel.Parent = bb
+                    userLabel.BackgroundTransparency = 1
+                    userLabel.Size = UDim2.new(1, 0, 0, 15)
+                    userLabel.Text = "@" .. plr.Name
+                    userLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    userLabel.TextStrokeTransparency = 0
+                    userLabel.Font = Enum.Font.Gotham
+                    userLabel.TextSize = 12
+                    userLabel.LayoutOrder = 3
+                end
             end
         end
     end
@@ -682,8 +713,18 @@ CreateToggle(PageVisuals, "Wall Bonecos", function(val)
     updateESP()
 end, true)
 
-CreateToggle(PageVisuals, "Wall Nomes (Info)", function(val)
-    getgenv().Settings.ESP_Names = val
+CreateToggle(PageVisuals, "Mostrar Nome (Display)", function(val)
+    getgenv().Settings.ESP_ShowName = val
+    updateESP()
+end, true)
+
+CreateToggle(PageVisuals, "Mostrar User (@)", function(val)
+    getgenv().Settings.ESP_ShowUser = val
+    updateESP()
+end, true)
+
+CreateToggle(PageVisuals, "Mostrar Ícone (Foto)", function(val)
+    getgenv().Settings.ESP_ShowIcon = val
     updateESP()
 end, true)
 
