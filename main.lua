@@ -10,10 +10,8 @@ local LogService = game:GetService("LogService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
---// URL BASE (O Cache Buster será adicionado dinamicamente na lógica de farm)
 local BaseScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
 
---// 1. CONFIGURAÇÕES
 getgenv().Settings = table.clear(getgenv().Settings or {})
 getgenv().Settings = {
     AutoFarm = false,
@@ -46,7 +44,6 @@ local Theme = {
     ControlHover = Color3.fromRGB(50, 50, 50)
 }
 
---// 3. UI SETUP
 if CoreGui:FindFirstChild("JR_HUB") then CoreGui.JR_HUB:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -55,7 +52,6 @@ ScreenGui.ResetOnSpawn = false
 if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
 ScreenGui.Parent = CoreGui
 
--- MainFrame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -70,7 +66,7 @@ local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = MainFrame
 
--- --- BARRA DE TÍTULO ---
+
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 32)
@@ -90,7 +86,6 @@ TitleBarFiller.BackgroundColor3 = Theme.Accent
 TitleBarFiller.BorderSizePixel = 0
 TitleBarFiller.Parent = TitleBar
 
--- Frame Minimized (Botão flutuante)
 local MiniFrame = Instance.new("TextButton")
 MiniFrame.Name = "MiniFrame"
 MiniFrame.Size = UDim2.new(0, 150, 0, 30)
@@ -185,7 +180,7 @@ ContentArea.Position = UDim2.new(0, 140, 0, 42)
 ContentArea.BackgroundTransparency = 1
 ContentArea.Parent = MainFrame
 
--- Window Controls (Botão de Minimizar na barra vermelha)
+-- Window Controls
 local WindowControls = Instance.new("Frame")
 WindowControls.Name = "WindowControls"
 WindowControls.Size = UDim2.new(0, 40, 1, 0)
@@ -222,7 +217,6 @@ local Pages = Instance.new("Folder")
 Pages.Name = "Pages"
 Pages.Parent = ContentArea
 
---// FUNÇÕES UI HELPERS
 local currentTab = nil
 
 local function CreatePage(name)
@@ -456,7 +450,7 @@ local function CreateInput(parent, placeholder, callback)
     end)
 end
 
---// 5. LÓGICA DO SCRIPT
+-- Lógica
 local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
 ESP_Folder.Name = "ESP_Cache"
@@ -578,8 +572,6 @@ local function StartFarmLogic()
     end
 end
 
---// 6. PÁGINAS
-
 -- FARM
 local PageFarm = CreatePage("PageFarm")
 CreateTabBtn("Farm", PageFarm)
@@ -597,7 +589,7 @@ CreateSlider(PageFarm, "Delay entre os TP's (Segundos)", 0, 2, 0.5, function(val
     getgenv().Settings.TPDelay = val
 end)
 
--- VISUALS
+-- VISUAL
 local PageVisuals = CreatePage("PageVisuals")
 CreateTabBtn("Visual", PageVisuals)
 
@@ -617,7 +609,7 @@ CreateToggle(PageVisuals, "Wall Nomes", function(val)
     updateESP()
 end, true)
 
--- TELEPORT
+-- TELEPORTE
 local PageTeleport = CreatePage("PageTeleport")
 CreateTabBtn("Teleporte", PageTeleport)
 
@@ -643,7 +635,7 @@ CreateButton(PageTeleport, "Teleportar", function()
     end
 end)
 
--- MOVEMENT
+-- MOVIMENTAÇÃO
 local PageMove = CreatePage("PageMove")
 CreateTabBtn("Movimentação", PageMove)
 
@@ -682,7 +674,7 @@ CreateSlider(PageMove, "Altura", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
--- TROLL (Nova Aba)
+-- TROLL
 local PageTroll = CreatePage("PageTroll")
 CreateTabBtn("Troll", PageTroll)
 
