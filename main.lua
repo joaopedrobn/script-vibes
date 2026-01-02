@@ -32,7 +32,9 @@ local Theme = {
     Sidebar = Color3.fromRGB(30, 30, 30),
     Accent = Color3.fromRGB(255, 60, 60),
     Text = Color3.fromRGB(255, 255, 255),
-    TextDim = Color3.fromRGB(150, 150, 150)
+    TextDim = Color3.fromRGB(150, 150, 150),
+    ControlHover = Color3.fromRGB(50, 50, 50),
+    CloseHover = Color3.fromRGB(200, 50, 50)
 }
 
 if CoreGui:FindFirstChild("JR_HUB") then CoreGui.JR_HUB:Destroy() end
@@ -56,6 +58,85 @@ MainFrame.Parent = ScreenGui
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 6)
 Corner.Parent = MainFrame
+
+local MiniFrame = Instance.new("TextButton")
+MiniFrame.Name = "MiniFrame"
+MiniFrame.Size = UDim2.new(0, 150, 0, 35)
+MiniFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+MiniFrame.BackgroundColor3 = Theme.Background
+MiniFrame.BorderSizePixel = 0
+MiniFrame.Text = "HUB - Abrir"
+MiniFrame.TextColor3 = Theme.Accent
+MiniFrame.Font = Enum.Font.GothamBold
+MiniFrame.TextSize = 14
+MiniFrame.Visible = false
+MiniFrame.Active = true
+MiniFrame.Draggable = true
+MiniFrame.Parent = ScreenGui
+
+local MiniCorner = Instance.new("UICorner")
+MiniCorner.CornerRadius = UDim.new(0, 6)
+MiniCorner.Parent = MiniFrame
+
+local MiniStroke = Instance.new("UIStroke")
+MiniStroke.Color = Theme.Accent
+MiniStroke.Thickness = 1
+MiniStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MiniStroke.Parent = MiniFrame
+
+MiniFrame.MouseButton1Click:Connect(function()
+    MiniFrame.Visible = false
+    MainFrame.Visible = true
+end)
+
+local WindowControls = Instance.new("Frame")
+WindowControls.Name = "WindowControls"
+WindowControls.Size = UDim2.new(0, 80, 0, 30)
+WindowControls.Position = UDim2.new(1, -85, 0, 5)
+WindowControls.BackgroundTransparency = 1
+WindowControls.Parent = MainFrame
+
+local MinBtn = Instance.new("TextButton")
+MinBtn.Name = "MinBtn"
+MinBtn.Size = UDim2.new(0, 35, 0, 30)
+MinBtn.BackgroundColor3 = Theme.Background
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Theme.TextDim
+MinBtn.Font = Enum.Font.Gotham
+MinBtn.TextSize = 24
+MinBtn.Parent = WindowControls
+
+MinBtn.MouseEnter:Connect(function() TweenService:Create(MinBtn, TweenInfo.new(0.2), {TextColor3 = Theme.Text}):Play() end)
+MinBtn.MouseLeave:Connect(function() TweenService:Create(MinBtn, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim}):Play() end)
+
+MinBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    MiniFrame.Position = MainFrame.Position + UDim2.new(0, 0, 0, 0) 
+    MiniFrame.Visible = true
+end)
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 35, 0, 30)
+CloseBtn.Position = UDim2.new(0, 40, 0, 0)
+CloseBtn.BackgroundColor3 = Theme.Background
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Theme.TextDim
+CloseBtn.Font = Enum.Font.Gotham
+CloseBtn.TextSize = 18
+CloseBtn.Parent = WindowControls
+
+CloseBtn.MouseEnter:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {TextColor3 = Theme.CloseHover}):Play() end)
+CloseBtn.MouseLeave:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim}):Play() end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    local esp = CoreGui:FindFirstChild("ESP_Cache")
+    if esp then esp:Destroy() end
+    getgenv().Settings.AutoFarm = false
+end)
 
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
@@ -550,53 +631,6 @@ end)
 
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
-
-CreateButton(PageSettings, "MINIMIZAR HUB", function()
-    MainFrame.Visible = false
-    local MiniBtn = Instance.new("TextButton")
-    MiniBtn.Name = "MiniBtn"
-    MiniBtn.Size = UDim2.new(0, 100, 0, 40)
-    MiniBtn.Position = UDim2.new(0, 10, 0.5, 0)
-    MiniBtn.BackgroundColor3 = Theme.Accent
-    MiniBtn.Text = "ABRIR"
-    MiniBtn.TextColor3 = Theme.Text
-    MiniBtn.Font = Enum.Font.GothamBold
-    MiniBtn.TextSize = 14
-    MiniBtn.Parent = ScreenGui
-    
-    local MCorner = Instance.new("UICorner")
-    MCorner.CornerRadius = UDim.new(0, 6)
-    MCorner.Parent = MiniBtn
-    
-    local dragToggle = nil
-    local dragStart = nil
-    local startPos = nil
-    MiniBtn.InputBegan:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-            dragToggle = true
-            dragStart = input.Position
-            startPos = MiniBtn.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragToggle = false
-                end
-            end)
-        end
-    end)
-    MiniBtn.InputChanged:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local delta = input.Position - dragStart
-            if dragToggle then
-                MiniBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end
-    end)
-    
-    MiniBtn.MouseButton1Click:Connect(function()
-        MainFrame.Visible = true
-        MiniBtn:Destroy()
-    end)
-end)
 
 CreateButton(PageSettings, "DESTRUIR GUI (Fechar)", function()
     ScreenGui:Destroy()
