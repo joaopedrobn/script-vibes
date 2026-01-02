@@ -6,17 +6,20 @@ local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LogService = game:GetService("LogService")
+local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local ScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
+local ConfigName = "JR_HUB_Config.json"
 
 getgenv().Settings = table.clear(getgenv().Settings or {})
 getgenv().Settings = {
     AutoFarm = false,
     TargetName = "LightTemplate",
-    TPDelay = 1,
+    TPDelay = 1.0,
     AutoServerHop = false,
     ESP_Enabled = false,
     ESP_Highlight = true,
@@ -31,7 +34,11 @@ getgenv().Settings = {
     WalkMode = false,
     AntiVoiceLogs = false,
     StickTarget = false,
-    SpectateTarget = false
+    SpectateTarget = false,
+    Fullbright = false,
+    NoBlur = false,
+    CustomTime = false,
+    TimeValue = 14
 }
 
 getgenv().AutoFarm_Rejoined = nil
@@ -55,8 +62,8 @@ ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 550, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
+MainFrame.Size = UDim2.new(0, 600, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
 MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -134,7 +141,7 @@ end)
 
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
-Sidebar.Size = UDim2.new(0, 130, 1, -32)
+Sidebar.Size = UDim2.new(0, 140, 1, -32)
 Sidebar.Position = UDim2.new(0, 0, 0, 32)
 Sidebar.BackgroundColor3 = Theme.Sidebar
 Sidebar.BorderSizePixel = 0
@@ -173,8 +180,8 @@ UIListLayout.Parent = TabContainer
 
 local ContentArea = Instance.new("Frame")
 ContentArea.Name = "ContentArea"
-ContentArea.Size = UDim2.new(1, -140, 1, -52)
-ContentArea.Position = UDim2.new(0, 140, 0, 42)
+ContentArea.Size = UDim2.new(1, -150, 1, -52)
+ContentArea.Position = UDim2.new(0, 150, 0, 42)
 ContentArea.BackgroundTransparency = 1
 ContentArea.Parent = MainFrame
 
@@ -318,6 +325,7 @@ local function CreateToggle(parent, text, callback, default)
         end
         callback(toggled)
     end)
+    return ToggleBtn
 end
 
 local function CreateSlider(parent, text, min, max, default, callback)
@@ -568,6 +576,24 @@ local function StartFarmLogic()
     end
 end
 
+local function SaveConfig()
+    if writefile then
+        local success, encoded = pcall(function() return HttpService:JSONEncode(getgenv().Settings) end)
+        if success then
+            writefile(ConfigName, encoded)
+        end
+    end
+end
+
+local function LoadConfig()
+    if isfile and isfile(ConfigName) then
+        local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(ConfigName)) end)
+        if success then
+            getgenv().Settings = decoded
+        end
+    end
+end
+
 local PageFarm = CreatePage("PageFarm")
 CreateTabBtn("Farm", PageFarm)
 
@@ -580,7 +606,7 @@ CreateToggle(PageFarm, "Auto Server Hop", function(val)
     getgenv().Settings.AutoServerHop = val
 end, getgenv().Settings.AutoServerHop)
 
-CreateSlider(PageFarm, "Delay entre os TP's (Segundos)", 0, 2, 1, function(val)
+CreateSlider(PageFarm, "Delay entre os TP's (Segundos)", 0, 2, 0.5, function(val)
     getgenv().Settings.TPDelay = val
 end)
 
@@ -611,7 +637,7 @@ CreateInput(PageTeleport, "Player...", function(text)
     tpTarget = text
 end)
 
-CreateButton(PageTeleport, "Teleportar", function()
+CreateButton(PageTeleport, "Teleportar (Player)", function()
     local targetName = tpTarget:lower()
     local found = nil
     for _, v in ipairs(Players:GetPlayers()) do
@@ -620,11 +646,36 @@ CreateButton(PageTeleport, "Teleportar", function()
             break
         end
     end
-    
     if found and found.Character and found.Character:FindFirstChild("HumanoidRootPart") then
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             LocalPlayer.Character.HumanoidRootPart.CFrame = found.Character.HumanoidRootPart.CFrame
         end
+    end
+end)
+
+CreateButton(PageTeleport, "Procurar e Ir: Baú/Chest", function()
+    local target = nil
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if (v.Name:find("Bau") or v.Name:find("Chest")) and v:IsA("Model") then
+            target = v
+            break
+        end
+    end
+    if target and LocalPlayer.Character then
+        LocalPlayer.Character:PivotTo(target:GetPivot())
+    end
+end)
+
+CreateButton(PageTeleport, "Procurar e Ir: Osso/Bone", function()
+    local target = nil
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if (v.Name:find("Osso") or v.Name:find("Bone")) and v:IsA("Model") then
+            target = v
+            break
+        end
+    end
+    if target and LocalPlayer.Character then
+        LocalPlayer.Character:PivotTo(target:GetPivot())
     end
 end)
 
@@ -674,7 +725,7 @@ CreateInput(PageTroll, "Player...", function(text)
     trollTarget = text
 end)
 
-CreateToggle(PageTroll, "Grudar", function(val)
+CreateToggle(PageTroll, "Grudar (Stick)", function(val)
     getgenv().Settings.StickTarget = val
     if val then
         task.spawn(function()
@@ -699,7 +750,7 @@ CreateToggle(PageTroll, "Grudar", function(val)
     end
 end, false)
 
-CreateToggle(PageTroll, "Assistir", function(val)
+CreateToggle(PageTroll, "Assistir (Spectate)", function(val)
     getgenv().Settings.SpectateTarget = val
     if val then
         task.spawn(function()
@@ -728,8 +779,66 @@ CreateToggle(PageTroll, "Assistir", function(val)
     end
 end, false)
 
+local PageGraphics = CreatePage("PageGraphics")
+CreateTabBtn("Gráficos", PageGraphics)
+
+CreateToggle(PageGraphics, "Fullbright (Luz Infinita)", function(val)
+    getgenv().Settings.Fullbright = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.Fullbright do
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 100000
+                Lighting.GlobalShadows = false
+                Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+                task.wait(1)
+            end
+        end)
+    end
+end, false)
+
+CreateToggle(PageGraphics, "Remover Blur/Efeitos", function(val)
+    getgenv().Settings.NoBlur = val
+    if val then
+        for _, v in pairs(Lighting:GetChildren()) do
+            if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+    end
+end, false)
+
+CreateSlider(PageGraphics, "Horário (Hora)", 0, 24, 14, function(val)
+    Lighting.ClockTime = val
+end)
+
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
+
+CreateToggle(PageSettings, "Anti-Logs Voice", function(val)
+    getgenv().Settings.AntiVoiceLogs = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.AntiVoiceLogs do
+                LogService:ClearOutput()
+                task.wait(1)
+            end
+        end)
+    end
+end, false)
+
+CreateButton(PageSettings, "Salvar Config", function()
+    SaveConfig()
+end)
+
+CreateButton(PageSettings, "Carregar Config", function()
+    LoadConfig()
+end)
+
+CreateButton(PageSettings, "Rejoin Server (Reentrar)", function()
+    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end)
 
 CreateButton(PageSettings, "Fechar HUB", function()
     ScreenGui:Destroy()
