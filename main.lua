@@ -91,7 +91,7 @@ SidebarFix.Parent = Sidebar
 
 -- Título
 local Title = Instance.new("TextLabel")
-Title.Text = "Low HUB"
+Title.Text = "HUB"
 Title.Font = Enum.Font.GothamBold
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 22
@@ -472,15 +472,15 @@ end)
 
 -- PAGINA 2: VISUALS
 local PageVisuals = CreatePage("PageVisuals")
-CreateTabBtn("Visuals", PageVisuals)
+CreateTabBtn("Visual", PageVisuals)
 
-CreateToggle(PageVisuals, "Ativar ESP (Master)", function(val)
+CreateToggle(PageVisuals, "Ativar ESP", function(val)
     getgenv().Settings.ESP_Enabled = val
     if not val then ESP_Folder:ClearAllChildren() end
     updateESP()
 end, false)
 
-CreateToggle(PageVisuals, "ESP Box/Highlight", function(val)
+CreateToggle(PageVisuals, "ESP Body", function(val)
     getgenv().Settings.ESP_Highlight = val
     updateESP()
 end, true)
@@ -492,7 +492,7 @@ end, true)
 
 -- PAGINA 3: MOVEMENT
 local PageMove = CreatePage("PageMove")
-CreateTabBtn("Movement", PageMove)
+CreateTabBtn("Movimentação", PageMove)
 
 CreateToggle(PageMove, "Speed Hack", function(val)
     getgenv().Settings.SpeedEnabled = val
@@ -511,7 +511,7 @@ CreateSlider(PageMove, "Velocidade", 16, 200, 16, function(val)
     getgenv().Settings.WalkSpeed = val
 end)
 
-CreateToggle(PageMove, "Super Jump", function(val)
+CreateToggle(PageMove, "Super Pulo", function(val)
     getgenv().Settings.JumpEnabled = val
     task.spawn(function()
         while getgenv().Settings.JumpEnabled do
@@ -525,13 +525,13 @@ CreateToggle(PageMove, "Super Jump", function(val)
     end)
 end, false)
 
-CreateSlider(PageMove, "Força Pulo", 50, 500, 50, function(val)
+CreateSlider(PageMove, "Força do Pulo", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
 -- PAGINA 4: SETTINGS
 local PageSettings = CreatePage("PageSettings")
-CreateTabBtn("Settings", PageSettings)
+CreateTabBtn("Configurações", PageSettings)
 
 CreateButton(PageSettings, "MINIMIZAR HUB", function()
     MainFrame.Visible = false
