@@ -607,7 +607,7 @@ local PageTeleport = CreatePage("PageTeleport")
 CreateTabBtn("Teleporte", PageTeleport)
 
 local tpTarget = ""
-CreateInput(PageTeleport, "Nome do Jogador...", function(text)
+CreateInput(PageTeleport, "Player...", function(text)
     tpTarget = text
 end)
 
@@ -670,7 +670,7 @@ local PageTroll = CreatePage("PageTroll")
 CreateTabBtn("Troll", PageTroll)
 
 local trollTarget = ""
-CreateInput(PageTroll, "Nome da Vítima...", function(text)
+CreateInput(PageTroll, "Player...", function(text)
     trollTarget = text
 end)
 
