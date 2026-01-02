@@ -10,7 +10,7 @@ local LogService = game:GetService("LogService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
-local BaseScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
+local ScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
 
 getgenv().Settings = table.clear(getgenv().Settings or {})
 getgenv().Settings = {
@@ -30,7 +30,8 @@ getgenv().Settings = {
     SpinBot = false,
     WalkMode = false,
     AntiVoiceLogs = false,
-    StickTarget = false
+    StickTarget = false,
+    SpectateTarget = false
 }
 
 getgenv().AutoFarm_Rejoined = nil
@@ -38,7 +39,7 @@ getgenv().AutoFarm_Rejoined = nil
 local Theme = {
     Background = Color3.fromRGB(20, 20, 20),
     Sidebar = Color3.fromRGB(30, 30, 30),
-    Accent = Color3.fromRGB(255, 60, 60), -- Vermelho
+    Accent = Color3.fromRGB(255, 60, 60),
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = Color3.fromRGB(150, 150, 150),
     ControlHover = Color3.fromRGB(50, 50, 50)
@@ -65,7 +66,6 @@ MainFrame.Parent = ScreenGui
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = MainFrame
-
 
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
@@ -132,7 +132,6 @@ MiniFrame.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
 end)
 
--- Sidebar
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 130, 1, -32)
@@ -172,7 +171,6 @@ UIListLayout.Padding = UDim.new(0, 5)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.Parent = TabContainer
 
--- Content Area
 local ContentArea = Instance.new("Frame")
 ContentArea.Name = "ContentArea"
 ContentArea.Size = UDim2.new(1, -140, 1, -52)
@@ -180,7 +178,6 @@ ContentArea.Position = UDim2.new(0, 140, 0, 42)
 ContentArea.BackgroundTransparency = 1
 ContentArea.Parent = MainFrame
 
--- Window Controls
 local WindowControls = Instance.new("Frame")
 WindowControls.Name = "WindowControls"
 WindowControls.Size = UDim2.new(0, 40, 1, 0)
@@ -450,7 +447,6 @@ local function CreateInput(parent, placeholder, callback)
     end)
 end
 
--- Lógica
 local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
 ESP_Folder.Name = "ESP_Cache"
@@ -548,7 +544,7 @@ local function StartFarmLogic()
                     if queue_on_teleport then
                         queue_on_teleport([[
                             task.wait(2)
-                            loadstring(game:HttpGet("]] .. BaseScriptURL .. [[?t="..tostring(math.random(1,1000000))))()
+                            loadstring(game:HttpGet("]] .. ScriptURL .. [[?t="..tostring(math.random(1,1000000))))()
                         ]])
                     end
                     TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -572,7 +568,6 @@ local function StartFarmLogic()
     end
 end
 
--- FARM
 local PageFarm = CreatePage("PageFarm")
 CreateTabBtn("Farm", PageFarm)
 
@@ -589,7 +584,6 @@ CreateSlider(PageFarm, "Delay entre os TP's (Segundos)", 0, 2, 0.5, function(val
     getgenv().Settings.TPDelay = val
 end)
 
--- VISUAL
 local PageVisuals = CreatePage("PageVisuals")
 CreateTabBtn("Visual", PageVisuals)
 
@@ -609,12 +603,11 @@ CreateToggle(PageVisuals, "Wall Nomes", function(val)
     updateESP()
 end, true)
 
--- TELEPORTE
 local PageTeleport = CreatePage("PageTeleport")
 CreateTabBtn("Teleporte", PageTeleport)
 
 local tpTarget = ""
-CreateInput(PageTeleport, "Player...", function(text)
+CreateInput(PageTeleport, "Nome do Jogador...", function(text)
     tpTarget = text
 end)
 
@@ -635,7 +628,6 @@ CreateButton(PageTeleport, "Teleportar", function()
     end
 end)
 
--- MOVIMENTAÇÃO
 local PageMove = CreatePage("PageMove")
 CreateTabBtn("Movimentação", PageMove)
 
@@ -674,16 +666,15 @@ CreateSlider(PageMove, "Altura", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
--- TROLL
 local PageTroll = CreatePage("PageTroll")
 CreateTabBtn("Troll", PageTroll)
 
 local trollTarget = ""
-CreateInput(PageTroll, "Player (Grudar)...", function(text)
+CreateInput(PageTroll, "Nome da Vítima...", function(text)
     trollTarget = text
 end)
 
-CreateToggle(PageTroll, "Grudar", function(val)
+CreateToggle(PageTroll, "Grudar (Stick)", function(val)
     getgenv().Settings.StickTarget = val
     if val then
         task.spawn(function()
@@ -693,11 +684,9 @@ CreateToggle(PageTroll, "Grudar", function(val)
                     for _, v in ipairs(Players:GetPlayers()) do
                         if v.Name:lower():match(targetName) or v.DisplayName:lower():match(targetName) then
                             if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-                                -- Desativa colisão pra evitar bugs fisicos
                                 for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
                                     if part:IsA("BasePart") then part.CanCollide = false end
                                 end
-                                -- Gruda nas costas
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                             end
                             break
@@ -710,9 +699,49 @@ CreateToggle(PageTroll, "Grudar", function(val)
     end
 end, false)
 
--- CONFIG
+CreateToggle(PageTroll, "Assistir (Spectate)", function(val)
+    getgenv().Settings.SpectateTarget = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.SpectateTarget do
+                local targetName = trollTarget:lower()
+                if targetName ~= "" then
+                    for _, v in ipairs(Players:GetPlayers()) do
+                        if v.Name:lower():match(targetName) or v.DisplayName:lower():match(targetName) then
+                            if v.Character and v.Character:FindFirstChild("Humanoid") then
+                                Camera.CameraSubject = v.Character.Humanoid
+                            end
+                            break
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                Camera.CameraSubject = LocalPlayer.Character.Humanoid
+            end
+        end)
+    else
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end
+end, false)
+
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
+
+CreateToggle(PageSettings, "Anti-Logs Voice (Limpeza)", function(val)
+    getgenv().Settings.AntiVoiceLogs = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.AntiVoiceLogs do
+                LogService:ClearOutput()
+                task.wait(1)
+            end
+        end)
+    end
+end, false)
 
 CreateButton(PageSettings, "Fechar HUB", function()
     ScreenGui:Destroy()
@@ -720,6 +749,10 @@ CreateButton(PageSettings, "Fechar HUB", function()
     getgenv().Settings.AutoFarm = false
     getgenv().Settings.AntiVoiceLogs = false
     getgenv().Settings.StickTarget = false
+    getgenv().Settings.SpectateTarget = false
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        Camera.CameraSubject = LocalPlayer.Character.Humanoid
+    end
 end)
 
 local Credits = Instance.new("TextLabel")
