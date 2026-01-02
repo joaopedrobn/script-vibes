@@ -5,15 +5,15 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local LogService = game:GetService("LogService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
---// URL DO SCRIPT (IMPORTANTE: MANTENHA O ARQUIVO DO GITHUB ATUALIZADO COM ESSE CÓDIGO)
-local ScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
+--// URL BASE (O Cache Buster será adicionado dinamicamente na lógica de farm)
+local BaseScriptURL = "https://raw.githubusercontent.com/joaopedrobn/script-rovibes/main/main.lua"
 
---// 1. HARD RESET NAS CONFIGURAÇÕES
--- Isso garante que, mesmo que o executor tente salvar o estado anterior, nós forçamos tudo para FALSE.
+--// 1. CONFIGURAÇÕES
 getgenv().Settings = table.clear(getgenv().Settings or {})
 getgenv().Settings = {
     AutoFarm = false,
@@ -30,10 +30,11 @@ getgenv().Settings = {
     FlyEnabled = false,
     FlySpeed = 50,
     SpinBot = false,
-    WalkMode = false
+    WalkMode = false,
+    AntiVoiceLogs = false,
+    StickTarget = false
 }
 
--- Forçar limpeza de flags antigas que possam estar na memória do executor
 getgenv().AutoFarm_Rejoined = nil
 
 local Theme = {
@@ -553,7 +554,7 @@ local function StartFarmLogic()
                     if queue_on_teleport then
                         queue_on_teleport([[
                             task.wait(2)
-                            loadstring(game:HttpGet("]] .. ScriptURL .. [["))()
+                            loadstring(game:HttpGet("]] .. BaseScriptURL .. [[?t="..tostring(math.random(1,1000000))))()
                         ]])
                     end
                     TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -681,14 +682,64 @@ CreateSlider(PageMove, "Altura", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
+-- TROLL (Nova Aba)
+local PageTroll = CreatePage("PageTroll")
+CreateTabBtn("Troll", PageTroll)
+
+local trollTarget = ""
+CreateInput(PageTroll, "Nome da Vítima (Stick)...", function(text)
+    trollTarget = text
+end)
+
+CreateToggle(PageTroll, "Grudar no Jogador (Stick)", function(val)
+    getgenv().Settings.StickTarget = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.StickTarget do
+                local targetName = trollTarget:lower()
+                if targetName ~= "" then
+                    for _, v in ipairs(Players:GetPlayers()) do
+                        if v.Name:lower():match(targetName) or v.DisplayName:lower():match(targetName) then
+                            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
+                                -- Desativa colisão pra evitar bugs fisicos
+                                for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+                                    if part:IsA("BasePart") then part.CanCollide = false end
+                                end
+                                -- Gruda nas costas
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                            end
+                            break
+                        end
+                    end
+                end
+                task.wait()
+            end
+        end)
+    end
+end, false)
+
 -- CONFIG
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
+
+CreateToggle(PageSettings, "Anti-Logs Voice (Limpeza)", function(val)
+    getgenv().Settings.AntiVoiceLogs = val
+    if val then
+        task.spawn(function()
+            while getgenv().Settings.AntiVoiceLogs do
+                LogService:ClearOutput()
+                task.wait(1)
+            end
+        end)
+    end
+end, false)
 
 CreateButton(PageSettings, "Fechar HUB", function()
     ScreenGui:Destroy()
     ESP_Folder:Destroy()
     getgenv().Settings.AutoFarm = false
+    getgenv().Settings.AntiVoiceLogs = false
+    getgenv().Settings.StickTarget = false
 end)
 
 local Credits = Instance.new("TextLabel")
