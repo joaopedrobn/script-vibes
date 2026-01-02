@@ -715,7 +715,7 @@ CreateToggle(PageTroll, "Assistir (Spectate)", function(val)
                         end
                     end
                 end
-                task.wait(0.1)
+                task.wait(0.2)
             end
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 Camera.CameraSubject = LocalPlayer.Character.Humanoid
