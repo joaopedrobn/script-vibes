@@ -1,9 +1,3 @@
---[[
-    HUB STANDALONE - BY JR
-    Estilo: Low HUB (Dark/Red)
-    Dependências: NENHUMA (Roda em qualquer executor)
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
@@ -15,7 +9,6 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
---// 1. CONFIGURAÇÕES
 getgenv().Settings = {
     AutoFarm = false,
     TargetName = "LightTemplate",
@@ -34,26 +27,22 @@ getgenv().Settings = {
     WalkMode = false
 }
 
---// 2. TEMA (ESTILO LOW HUB)
 local Theme = {
     Background = Color3.fromRGB(20, 20, 20),
     Sidebar = Color3.fromRGB(30, 30, 30),
-    Accent = Color3.fromRGB(255, 60, 60), -- Vermelho Neon
+    Accent = Color3.fromRGB(255, 60, 60),
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = Color3.fromRGB(150, 150, 150)
 }
 
---// 3. CRIAÇÃO DA UI (FEITA DO ZERO)
 if CoreGui:FindFirstChild("JR_HUB") then CoreGui.JR_HUB:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "JR_HUB"
 ScreenGui.ResetOnSpawn = false
--- Tenta proteger a GUI (se o executor permitir)
 if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
 ScreenGui.Parent = CoreGui
 
--- Janela Principal
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -64,12 +53,10 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
--- Cantos Arredondados
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 6)
 Corner.Parent = MainFrame
 
--- Barra Lateral (Abas)
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 130, 1, 0)
@@ -81,7 +68,6 @@ local SidebarCorner = Instance.new("UICorner")
 SidebarCorner.CornerRadius = UDim.new(0, 6)
 SidebarCorner.Parent = Sidebar
 
--- Correção visual do canto direito da sidebar
 local SidebarFix = Instance.new("Frame")
 SidebarFix.BorderSizePixel = 0
 SidebarFix.BackgroundColor3 = Theme.Sidebar
@@ -89,7 +75,6 @@ SidebarFix.Size = UDim2.new(0, 10, 1, 0)
 SidebarFix.Position = UDim2.new(1, -10, 0, 0)
 SidebarFix.Parent = Sidebar
 
--- Título
 local Title = Instance.new("TextLabel")
 Title.Text = "HUB"
 Title.Font = Enum.Font.GothamBold
@@ -99,7 +84,6 @@ Title.Size = UDim2.new(1, 0, 0, 50)
 Title.BackgroundTransparency = 1
 Title.Parent = Sidebar
 
--- Container de Botões das Abas
 local TabContainer = Instance.new("Frame")
 TabContainer.Size = UDim2.new(1, 0, 1, -60)
 TabContainer.Position = UDim2.new(0, 0, 0, 60)
@@ -111,7 +95,6 @@ UIListLayout.Padding = UDim.new(0, 5)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.Parent = TabContainer
 
--- Área de Conteúdo (Onde ficam os botões)
 local ContentArea = Instance.new("Frame")
 ContentArea.Name = "ContentArea"
 ContentArea.Size = UDim2.new(1, -140, 1, -20)
@@ -119,12 +102,10 @@ ContentArea.Position = UDim2.new(0, 140, 0, 10)
 ContentArea.BackgroundTransparency = 1
 ContentArea.Parent = MainFrame
 
--- Pasta para guardar as páginas
 local Pages = Instance.new("Folder")
 Pages.Name = "Pages"
 Pages.Parent = ContentArea
 
---// FUNÇÕES VISUAIS AUXILIARES
 local currentTab = nil
 
 local function CreatePage(name)
@@ -165,23 +146,19 @@ local function CreateTabBtn(name, pageObj)
     BtnCorner.Parent = Btn
     
     Btn.MouseButton1Click:Connect(function()
-        -- Resetar todos os botões
         for _, child in ipairs(TabContainer:GetChildren()) do
             if child:IsA("TextButton") then
                 TweenService:Create(child, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim, BackgroundColor3 = Theme.Background}):Play()
             end
         end
-        -- Esconder todas as páginas
         for _, child in ipairs(Pages:GetChildren()) do
             child.Visible = false
         end
         
-        -- Ativar atual
         TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Theme.Accent, BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
         pageObj.Visible = true
     end)
     
-    -- Selecionar o primeiro automaticamente
     if currentTab == nil then
         currentTab = Btn
         Btn.TextColor3 = Theme.Accent
@@ -334,9 +311,34 @@ local function CreateButton(parent, text, callback)
     Btn.MouseButton1Click:Connect(callback)
 end
 
---// 4. LÓGICA DO SCRIPT (FARM, ESP, ETC)
+local function CreateInput(parent, placeholder, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0.98, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Frame.Parent = parent
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Frame
+    
+    local Box = Instance.new("TextBox")
+    Box.Size = UDim2.new(0.9, 0, 1, 0)
+    Box.Position = UDim2.new(0.05, 0, 0, 0)
+    Box.BackgroundTransparency = 1
+    Box.TextColor3 = Theme.Text
+    Box.PlaceholderText = placeholder
+    Box.PlaceholderColor3 = Theme.TextDim
+    Box.Text = ""
+    Box.Font = Enum.Font.Gotham
+    Box.TextSize = 14
+    Box.TextXAlignment = Enum.TextXAlignment.Left
+    Box.Parent = Frame
+    
+    Box.FocusLost:Connect(function(enter)
+        callback(Box.Text)
+    end)
+end
 
--- Variáveis de Conexão
 local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
 ESP_Folder.Name = "ESP_Cache"
@@ -375,7 +377,6 @@ local function updateESP()
     ESP_Folder:ClearAllChildren()
     if not getgenv().Settings.ESP_Enabled then return end
 
-    -- Itens
     for _, obj in ipairs(getTargets()) do
         if obj then
             local h = Instance.new("Highlight")
@@ -387,7 +388,6 @@ local function updateESP()
         end
     end
 
-    -- Players
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
             if getgenv().Settings.ESP_Highlight then
@@ -419,7 +419,6 @@ local function updateESP()
     end
 end
 
--- Loop ESP Seguro
 task.spawn(function()
     while true do
         if getgenv().Settings.ESP_Enabled then pcall(updateESP) end
@@ -427,9 +426,6 @@ task.spawn(function()
     end
 end)
 
---// 5. CONSTRUINDO AS PÁGINAS
-
--- PAGINA 1: FARM
 local PageFarm = CreatePage("PageFarm")
 CreateTabBtn("Farm", PageFarm)
 
@@ -470,7 +466,6 @@ CreateSlider(PageFarm, "Delay TP (Segundos)", 0, 2, 0.5, function(val)
     getgenv().Settings.TPDelay = val
 end)
 
--- PAGINA 2: VISUALS
 local PageVisuals = CreatePage("PageVisuals")
 CreateTabBtn("Visual", PageVisuals)
 
@@ -490,7 +485,31 @@ CreateToggle(PageVisuals, "ESP Nomes", function(val)
     updateESP()
 end, true)
 
--- PAGINA 3: MOVEMENT
+local PageTeleport = CreatePage("PageTeleport")
+CreateTabBtn("Teleport", PageTeleport)
+
+local tpTarget = ""
+CreateInput(PageTeleport, "Nome do Jogador...", function(text)
+    tpTarget = text
+end)
+
+CreateButton(PageTeleport, "TELEPORTAR", function()
+    local targetName = tpTarget:lower()
+    local found = nil
+    for _, v in ipairs(Players:GetPlayers()) do
+        if v.Name:lower():match(targetName) or v.DisplayName:lower():match(targetName) then
+            found = v
+            break
+        end
+    end
+    
+    if found and found.Character and found.Character:FindFirstChild("HumanoidRootPart") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = found.Character.HumanoidRootPart.CFrame
+        end
+    end
+end)
+
 local PageMove = CreatePage("PageMove")
 CreateTabBtn("Movimentação", PageMove)
 
@@ -529,13 +548,11 @@ CreateSlider(PageMove, "Força do Pulo", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
--- PAGINA 4: SETTINGS
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
 
 CreateButton(PageSettings, "MINIMIZAR HUB", function()
     MainFrame.Visible = false
-    -- Criar botão pequeno
     local MiniBtn = Instance.new("TextButton")
     MiniBtn.Name = "MiniBtn"
     MiniBtn.Size = UDim2.new(0, 100, 0, 40)
@@ -551,7 +568,6 @@ CreateButton(PageSettings, "MINIMIZAR HUB", function()
     MCorner.CornerRadius = UDim.new(0, 6)
     MCorner.Parent = MiniBtn
     
-    -- Draggable no MiniBtn
     local dragToggle = nil
     local dragStart = nil
     local startPos = nil
@@ -588,5 +604,4 @@ CreateButton(PageSettings, "DESTRUIR GUI (Fechar)", function()
     getgenv().Settings.AutoFarm = false
 end)
 
--- Init
-print("JR HUB CARREGADO - MODO STANDALONE")
+print("HUB CARREGADO")
