@@ -23,9 +23,7 @@ getgenv().Settings = {
     AutoServerHop = false,
     ESP_Enabled = false,
     ESP_Highlight = true,
-    ESP_ShowName = true,
-    ESP_ShowUser = true,
-    ESP_ShowIcon = true,
+    ESP_Names = true,
     WalkSpeed = 16,
     JumpPower = 50,
     SpeedEnabled = false,
@@ -479,13 +477,14 @@ local function TPToName(name)
         if v.Name:lower():find(name:lower()) then
             if v:IsA("Model") and LocalPlayer.Character then
                 LocalPlayer.Character:PivotTo(v:GetPivot() + Vector3.new(0,3,0))
-                return
+                return true
             elseif v:IsA("BasePart") and LocalPlayer.Character then
                 LocalPlayer.Character:PivotTo(v.CFrame + Vector3.new(0,3,0))
-                return
+                return true
             end
         end
     end
+    return false
 end
 
 local Connections = {}
@@ -561,7 +560,7 @@ local function updateESP()
                 h.Parent = ESP_Folder
             end
             
-            if getgenv().Settings.ESP_ShowName or getgenv().Settings.ESP_ShowUser or getgenv().Settings.ESP_ShowIcon then
+            if getgenv().Settings.ESP_Names or getgenv().Settings.ESP_Face then
                 local bb = Instance.new("BillboardGui")
                 bb.Name = "Info"
                 bb.Adornee = plr.Character.Head
@@ -570,54 +569,32 @@ local function updateESP()
                 bb.AlwaysOnTop = true
                 bb.Parent = ESP_Folder
                 
-                local listLayout = Instance.new("UIListLayout")
-                listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                listLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-                listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-                listLayout.Parent = bb
-
-                if getgenv().Settings.ESP_ShowIcon then
-                    local iconContainer = Instance.new("Frame")
-                    iconContainer.BackgroundTransparency = 1
-                    iconContainer.Size = UDim2.new(0, 30, 0, 30)
-                    iconContainer.LayoutOrder = 1
-                    iconContainer.Parent = bb
-                    
+                local currentY = 0
+                
+                if getgenv().Settings.ESP_Face then
                     local icon = Instance.new("ImageLabel")
-                    icon.Parent = iconContainer
+                    icon.Parent = bb
                     icon.BackgroundTransparency = 1
-                    icon.Size = UDim2.new(1, 0, 1, 0)
-                    
+                    icon.Position = UDim2.new(0.5, -15, 0, currentY)
+                    icon.Size = UDim2.new(0, 30, 0, 30)
                     task.spawn(function()
                         local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
                         if isReady then icon.Image = content end
                     end)
+                    currentY = currentY + 35
                 end
 
-                if getgenv().Settings.ESP_ShowName then
+                if getgenv().Settings.ESP_Names then
                     local nameLabel = Instance.new("TextLabel")
                     nameLabel.Parent = bb
                     nameLabel.BackgroundTransparency = 1
+                    nameLabel.Position = UDim2.new(0, 0, 0, currentY)
                     nameLabel.Size = UDim2.new(1, 0, 0, 20)
-                    nameLabel.Text = plr.DisplayName
+                    nameLabel.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
                     nameLabel.TextColor3 = Color3.new(1,1,1)
                     nameLabel.TextStrokeTransparency = 0
                     nameLabel.Font = Enum.Font.GothamBold
                     nameLabel.TextSize = 14
-                    nameLabel.LayoutOrder = 2
-                end
-
-                if getgenv().Settings.ESP_ShowUser then
-                    local userLabel = Instance.new("TextLabel")
-                    userLabel.Parent = bb
-                    userLabel.BackgroundTransparency = 1
-                    userLabel.Size = UDim2.new(1, 0, 0, 15)
-                    userLabel.Text = "@" .. plr.Name
-                    userLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-                    userLabel.TextStrokeTransparency = 0
-                    userLabel.Font = Enum.Font.Gotham
-                    userLabel.TextSize = 12
-                    userLabel.LayoutOrder = 3
                 end
             end
         end
@@ -702,29 +679,24 @@ end)
 local PageVisuals = CreatePage("PageVisuals")
 CreateTabBtn("Visual", PageVisuals)
 
-CreateToggle(PageVisuals, "Ativar Wall", function(val)
+CreateToggle(PageVisuals, "Ativar Wall (Master)", function(val)
     getgenv().Settings.ESP_Enabled = val
     if not val then ESP_Folder:ClearAllChildren() end
     updateESP()
 end, false)
 
-CreateToggle(PageVisuals, "Wall Bonecos", function(val)
+CreateToggle(PageVisuals, "Wall Bonecos (Highlight)", function(val)
     getgenv().Settings.ESP_Highlight = val
     updateESP()
 end, true)
 
-CreateToggle(PageVisuals, "Mostrar Nome (Display)", function(val)
-    getgenv().Settings.ESP_ShowName = val
+CreateToggle(PageVisuals, "Wall Nomes (Texto)", function(val)
+    getgenv().Settings.ESP_Names = val
     updateESP()
 end, true)
 
-CreateToggle(PageVisuals, "Mostrar User (@)", function(val)
-    getgenv().Settings.ESP_ShowUser = val
-    updateESP()
-end, true)
-
-CreateToggle(PageVisuals, "Mostrar Ícone (Foto)", function(val)
-    getgenv().Settings.ESP_ShowIcon = val
+CreateToggle(PageVisuals, "Wall Ícone (Foto)", function(val)
+    getgenv().Settings.ESP_Face = val
     updateESP()
 end, true)
 
@@ -752,8 +724,8 @@ CreateButton(PageTeleport, "Teleportar (Player)", function()
     end
 end)
 
-CreateSection(PageTeleport, "LOJA/ITENS")
-CreateButton(PageTeleport, "Ir para Próximo Baú/Chest", function()
+CreateSection(PageTeleport, "LOJA/ITENS (Sequencial)")
+CreateButton(PageTeleport, "Ir para Próximo Baú (Chest)", function()
     local list = getSortedTargets("Bau", "Chest")
     if #list > 0 then
         if getgenv().ChestIndex > #list then getgenv().ChestIndex = 1 end
@@ -764,7 +736,7 @@ CreateButton(PageTeleport, "Ir para Próximo Baú/Chest", function()
     end
 end)
 
-CreateButton(PageTeleport, "Ir para Próximo Osso/Bone", function()
+CreateButton(PageTeleport, "Ir para Próximo Osso (Bone)", function()
     local list = getSortedTargets("Osso", "Bone")
     if #list > 0 then
         if getgenv().BoneIndex > #list then getgenv().BoneIndex = 1 end
@@ -776,10 +748,18 @@ CreateButton(PageTeleport, "Ir para Próximo Osso/Bone", function()
 end)
 
 CreateSection(PageTeleport, "LOCAIS (FIXOS)")
-CreateButton(PageTeleport, "Sacrifício (Altar)", function() TPToName("Altar") or TPToName("Sacrif") end)
-CreateButton(PageTeleport, "Ponte (Bridge)", function() TPToName("Bridge") or TPToName("Ponte") end)
-CreateButton(PageTeleport, "Ilha (Island)", function() TPToName("Island") or TPToName("Ilha") end)
-CreateButton(PageTeleport, "Neve (Snow)", function() TPToName("Snow") or TPToName("Neve") end)
+CreateButton(PageTeleport, "Sacrifício (Altar)", function() 
+    if not TPToName("Altar") then TPToName("Sacrif") end 
+end)
+CreateButton(PageTeleport, "Ponte (Bridge)", function() 
+    if not TPToName("Bridge") then TPToName("Ponte") end 
+end)
+CreateButton(PageTeleport, "Ilha (Island)", function() 
+    if not TPToName("Island") then TPToName("Ilha") end 
+end)
+CreateButton(PageTeleport, "Neve (Snow)", function() 
+    if not TPToName("Snow") then TPToName("Neve") end 
+end)
 CreateButton(PageTeleport, "Céu (Sky)", function() 
     if LocalPlayer.Character then 
         LocalPlayer.Character:PivotTo(CFrame.new(0, 500, 0)) 
@@ -965,7 +945,7 @@ CreateButton(PageSettings, "Rejoin Server (Reentrar)", function()
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end)
 
-CreateButton(PageSettings, "Resetar Personagem (Suicídio)", function()
+CreateButton(PageSettings, "Resetar Personagem", function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.Health = 0
     end
