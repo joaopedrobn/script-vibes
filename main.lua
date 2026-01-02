@@ -7,6 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LogService = game:GetService("LogService")
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -534,8 +535,8 @@ local function updateESP()
             if getgenv().Settings.ESP_Highlight then
                 local h = Instance.new("Highlight")
                 h.Adornee = plr.Character
-                h.FillColor = Theme.Accent
-                h.OutlineColor = Color3.new(1,1,1)
+                h.FillColor = Color3.fromRGB(255, 0, 0)
+                h.OutlineColor = Color3.fromRGB(255, 255, 255)
                 h.FillTransparency = 0.5
                 h.Parent = ESP_Folder
             end
@@ -543,42 +544,32 @@ local function updateESP()
                 local bb = Instance.new("BillboardGui")
                 bb.Name = "Info"
                 bb.Adornee = plr.Character.Head
-                bb.Size = UDim2.new(0, 100, 0, 50)
-                bb.StudsOffset = Vector3.new(0, 2, 0)
+                bb.Size = UDim2.new(0, 200, 0, 100)
+                bb.StudsOffset = Vector3.new(0, 3, 0)
                 bb.AlwaysOnTop = true
                 bb.Parent = ESP_Folder
                 
-                local name = Instance.new("TextLabel")
-                name.Parent = bb
-                name.BackgroundTransparency = 1
-                name.Position = UDim2.new(0, 0, 0, 0)
-                name.Size = UDim2.new(1, 0, 0.3, 0)
-                name.Text = plr.DisplayName
-                name.TextColor3 = Color3.new(1,1,1)
-                name.TextStrokeTransparency = 0
-                name.Font = Enum.Font.GothamBold
-                name.TextSize = 14
+                local icon = Instance.new("ImageLabel")
+                icon.Parent = bb
+                icon.BackgroundTransparency = 1
+                icon.Position = UDim2.new(0.5, -15, 0, 0)
+                icon.Size = UDim2.new(0, 30, 0, 30)
                 
-                local user = Instance.new("TextLabel")
-                user.Parent = bb
-                user.BackgroundTransparency = 1
-                user.Position = UDim2.new(0, 0, 0.3, 0)
-                user.Size = UDim2.new(1, 0, 0.3, 0)
-                user.Text = "@"..plr.Name
-                user.TextColor3 = Color3.fromRGB(200, 200, 200)
-                user.TextStrokeTransparency = 0
-                user.Font = Enum.Font.Gotham
-                user.TextSize = 12
-
                 task.spawn(function()
-                    local content = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
-                    local icon = Instance.new("ImageLabel")
-                    icon.Parent = bb
-                    icon.BackgroundTransparency = 1
-                    icon.Position = UDim2.new(-0.3, 0, 0, 0)
-                    icon.Size = UDim2.new(0, 30, 0, 30)
-                    icon.Image = content
+                    local content, isReady = Players:GetUserThumbnailAsync(plr.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+                    if isReady then icon.Image = content end
                 end)
+
+                local nameLabel = Instance.new("TextLabel")
+                nameLabel.Parent = bb
+                nameLabel.BackgroundTransparency = 1
+                nameLabel.Position = UDim2.new(0, 0, 0, 32)
+                nameLabel.Size = UDim2.new(1, 0, 0, 20)
+                nameLabel.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
+                nameLabel.TextColor3 = Color3.new(1,1,1)
+                nameLabel.TextStrokeTransparency = 0
+                nameLabel.Font = Enum.Font.GothamBold
+                nameLabel.TextSize = 14
             end
         end
     end
