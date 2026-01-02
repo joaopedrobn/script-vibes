@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+--// 1. CONFIGURAÇÕES
 getgenv().Settings = {
     AutoFarm = false,
     TargetName = "LightTemplate",
@@ -27,16 +28,17 @@ getgenv().Settings = {
     WalkMode = false
 }
 
+--// 2. TEMA
 local Theme = {
     Background = Color3.fromRGB(20, 20, 20),
     Sidebar = Color3.fromRGB(30, 30, 30),
     Accent = Color3.fromRGB(255, 60, 60),
     Text = Color3.fromRGB(255, 255, 255),
-    TextDim = Color3.fromRGB(150, 150, 150),
-    ControlHover = Color3.fromRGB(50, 50, 50),
+    TextDim = Color3.fromRGB(180, 180, 180),
     CloseHover = Color3.fromRGB(200, 50, 50)
 }
 
+--// 3. UI SETUP
 if CoreGui:FindFirstChild("JR_HUB") then CoreGui.JR_HUB:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -45,6 +47,7 @@ ScreenGui.ResetOnSpawn = false
 if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
 ScreenGui.Parent = CoreGui
 
+-- MainFrame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 350)
@@ -59,85 +62,57 @@ local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 6)
 Corner.Parent = MainFrame
 
+-- Frame Minimized (A barra pequena quando minimiza)
 local MiniFrame = Instance.new("TextButton")
 MiniFrame.Name = "MiniFrame"
-MiniFrame.Size = UDim2.new(0, 150, 0, 35)
-MiniFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
-MiniFrame.BackgroundColor3 = Theme.Background
+MiniFrame.Size = UDim2.new(0, 150, 0, 30) -- Tamanho da barra
+MiniFrame.Position = UDim2.new(0.5, -75, 0.1, 0)
+MiniFrame.BackgroundColor3 = Theme.Sidebar
 MiniFrame.BorderSizePixel = 0
-MiniFrame.Text = "HUB - Abrir"
+MiniFrame.Text = "HUB - Restaurar"
 MiniFrame.TextColor3 = Theme.Accent
 MiniFrame.Font = Enum.Font.GothamBold
-MiniFrame.TextSize = 14
-MiniFrame.Visible = false
-MiniFrame.Active = true
-MiniFrame.Draggable = true
+MiniFrame.TextSize = 12
+MiniFrame.Visible = false -- Começa invisível
+MiniFrame.AutoButtonColor = true
 MiniFrame.Parent = ScreenGui
 
-local MiniCorner = Instance.new("UICorner")
-MiniCorner.CornerRadius = UDim.new(0, 6)
-MiniCorner.Parent = MiniFrame
+-- Tornar o MiniFrame Arrastável
+local MiniDrag = Instance.new("UICorner")
+MiniDrag.CornerRadius = UDim.new(0, 6)
+MiniDrag.Parent = MiniFrame
 
-local MiniStroke = Instance.new("UIStroke")
-MiniStroke.Color = Theme.Accent
-MiniStroke.Thickness = 1
-MiniStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-MiniStroke.Parent = MiniFrame
+-- Lógica simples de drag para o MiniFrame
+local dragging, dragInput, dragStart, startPos
+MiniFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MiniFrame.Position
+    end
+end)
+MiniFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MiniFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+MiniFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
 
+-- Ao clicar na barra minimizada, restaura o HUB
 MiniFrame.MouseButton1Click:Connect(function()
     MiniFrame.Visible = false
     MainFrame.Visible = true
 end)
 
-local WindowControls = Instance.new("Frame")
-WindowControls.Name = "WindowControls"
-WindowControls.Size = UDim2.new(0, 80, 0, 30)
-WindowControls.Position = UDim2.new(1, -85, 0, 5)
-WindowControls.BackgroundTransparency = 1
-WindowControls.Parent = MainFrame
-
-local MinBtn = Instance.new("TextButton")
-MinBtn.Name = "MinBtn"
-MinBtn.Size = UDim2.new(0, 35, 0, 30)
-MinBtn.BackgroundColor3 = Theme.Background
-MinBtn.BackgroundTransparency = 1
-MinBtn.Text = "-"
-MinBtn.TextColor3 = Theme.TextDim
-MinBtn.Font = Enum.Font.Gotham
-MinBtn.TextSize = 24
-MinBtn.Parent = WindowControls
-
-MinBtn.MouseEnter:Connect(function() TweenService:Create(MinBtn, TweenInfo.new(0.2), {TextColor3 = Theme.Text}):Play() end)
-MinBtn.MouseLeave:Connect(function() TweenService:Create(MinBtn, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim}):Play() end)
-
-MinBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    MiniFrame.Position = MainFrame.Position + UDim2.new(0, 0, 0, 0) 
-    MiniFrame.Visible = true
-end)
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Name = "CloseBtn"
-CloseBtn.Size = UDim2.new(0, 35, 0, 30)
-CloseBtn.Position = UDim2.new(0, 40, 0, 0)
-CloseBtn.BackgroundColor3 = Theme.Background
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Theme.TextDim
-CloseBtn.Font = Enum.Font.Gotham
-CloseBtn.TextSize = 18
-CloseBtn.Parent = WindowControls
-
-CloseBtn.MouseEnter:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {TextColor3 = Theme.CloseHover}):Play() end)
-CloseBtn.MouseLeave:Connect(function() TweenService:Create(CloseBtn, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim}):Play() end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-    local esp = CoreGui:FindFirstChild("ESP_Cache")
-    if esp then esp:Destroy() end
-    getgenv().Settings.AutoFarm = false
-end)
-
+-- Sidebar
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Size = UDim2.new(0, 130, 1, 0)
@@ -176,6 +151,7 @@ UIListLayout.Padding = UDim.new(0, 5)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIListLayout.Parent = TabContainer
 
+-- Content Area
 local ContentArea = Instance.new("Frame")
 ContentArea.Name = "ContentArea"
 ContentArea.Size = UDim2.new(1, -140, 1, -20)
@@ -187,6 +163,60 @@ local Pages = Instance.new("Folder")
 Pages.Name = "Pages"
 Pages.Parent = ContentArea
 
+--// 4. BOTOES DE CONTROLE DA JANELA (FIXED)
+-- Colocando ZIndex alto para garantir que apareçam
+local WindowControls = Instance.new("Frame")
+WindowControls.Name = "WindowControls"
+WindowControls.Size = UDim2.new(0, 70, 0, 30)
+WindowControls.Position = UDim2.new(1, -75, 0, 5)
+WindowControls.BackgroundTransparency = 1
+WindowControls.ZIndex = 10 -- Prioridade máxima
+WindowControls.Parent = MainFrame
+
+-- Botão Minimizar (-)
+local MinBtn = Instance.new("TextButton")
+MinBtn.Name = "MinBtn"
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.BackgroundColor3 = Theme.Background
+MinBtn.BackgroundTransparency = 1
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Theme.Text
+MinBtn.Font = Enum.Font.Gotham
+MinBtn.TextSize = 28
+MinBtn.ZIndex = 10
+MinBtn.Parent = WindowControls
+
+MinBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    -- Posiciona a barra minimizada onde o main frame estava
+    MiniFrame.Position = MainFrame.Position 
+    MiniFrame.Visible = true
+end)
+
+-- Botão Fechar (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Name = "CloseBtn"
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(0, 35, 0, 0)
+CloseBtn.BackgroundColor3 = Theme.Background
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Theme.Text
+CloseBtn.Font = Enum.Font.Gotham
+CloseBtn.TextSize = 20
+CloseBtn.ZIndex = 10
+CloseBtn.Parent = WindowControls
+
+CloseBtn.MouseEnter:Connect(function() CloseBtn.TextColor3 = Theme.CloseHover end)
+CloseBtn.MouseLeave:Connect(function() CloseBtn.TextColor3 = Theme.Text end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+    if CoreGui:FindFirstChild("ESP_Cache") then CoreGui.ESP_Cache:Destroy() end
+    getgenv().Settings.AutoFarm = false
+end)
+
+--// 5. FUNÇÕES UI HELPERS
 local currentTab = nil
 
 local function CreatePage(name)
@@ -420,6 +450,7 @@ local function CreateInput(parent, placeholder, callback)
     end)
 end
 
+--// 6. LÓGICA DO SCRIPT
 local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
 ESP_Folder.Name = "ESP_Cache"
@@ -507,6 +538,9 @@ task.spawn(function()
     end
 end)
 
+--// 7. PÁGINAS
+
+-- FARM
 local PageFarm = CreatePage("PageFarm")
 CreateTabBtn("Farm", PageFarm)
 
@@ -547,6 +581,7 @@ CreateSlider(PageFarm, "Delay TP (Segundos)", 0, 2, 0.5, function(val)
     getgenv().Settings.TPDelay = val
 end)
 
+-- VISUALS
 local PageVisuals = CreatePage("PageVisuals")
 CreateTabBtn("Visual", PageVisuals)
 
@@ -566,6 +601,7 @@ CreateToggle(PageVisuals, "ESP Nomes", function(val)
     updateESP()
 end, true)
 
+-- TELEPORT
 local PageTeleport = CreatePage("PageTeleport")
 CreateTabBtn("Teleport", PageTeleport)
 
@@ -591,6 +627,7 @@ CreateButton(PageTeleport, "TELEPORTAR", function()
     end
 end)
 
+-- MOVEMENT
 local PageMove = CreatePage("PageMove")
 CreateTabBtn("Movimentação", PageMove)
 
@@ -629,6 +666,7 @@ CreateSlider(PageMove, "Força do Pulo", 50, 500, 50, function(val)
     getgenv().Settings.JumpPower = val
 end)
 
+-- CONFIG
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
 
