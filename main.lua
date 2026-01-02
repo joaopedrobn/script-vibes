@@ -1,120 +1,345 @@
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-
---// 1. SISTEMA DE MINIMIZAR (CUSTOM UI)
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
-
--- Criar a GUI do Botão Minimizado
-local MiniGui = Instance.new("ScreenGui")
-MiniGui.Name = "MiniHub_Button"
-MiniGui.Parent = CoreGui
-MiniGui.Enabled = false -- Começa invisível
-
-local MaximizeBtn = Instance.new("TextButton")
-MaximizeBtn.Name = "MaximizeBtn"
-MaximizeBtn.Parent = MiniGui
-MaximizeBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MaximizeBtn.BorderSizePixel = 0
-MaximizeBtn.Position = UDim2.new(0.01, 0, 0.5, 0) -- Posição inicial (Esquerda meio)
-MaximizeBtn.Size = UDim2.new(0, 120, 0, 40)
-MaximizeBtn.Text = "ABRIR HUB"
-MaximizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MaximizeBtn.Font = Enum.Font.GothamBold
-MaximizeBtn.TextSize = 12
-
--- Borda Bonita (Stroke)
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Parent = MaximizeBtn
-UIStroke.Color = Color3.fromRGB(60, 60, 60)
-UIStroke.Thickness = 1
-UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
--- Arredondamento
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 6)
-UICorner.Parent = MaximizeBtn
-
--- Tornar o botão arrastável (Draggable Logic)
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    MaximizeBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-end
-
-MaximizeBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MaximizeBtn.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-MaximizeBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
-
--- Lógica de Maximizar (Clicar no botão pequeno)
-MaximizeBtn.MouseButton1Click:Connect(function()
-    MiniGui.Enabled = false
-    -- Tenta encontrar a GUI do Orion e mostrar
-    if OrionLib.Instance then
-        OrionLib.Instance.Enabled = true
-    end
-end)
-
---// 2. INÍCIO DO ORION LIB
-local Window = OrionLib:MakeWindow({Name = "HUB - by jr", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest", IntroEnabled = true})
+--[[
+    HUB STANDALONE - BY JR
+    Estilo: Low HUB (Dark/Red)
+    Dependências: NENHUMA (Roda em qualquer executor)
+]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
+--// 1. CONFIGURAÇÕES
 getgenv().Settings = {
     AutoFarm = false,
     TargetName = "LightTemplate",
     TPDelay = 0.5,
     AutoServerHop = false,
-    
     ESP_Enabled = false,
     ESP_Highlight = true,
     ESP_Names = true,
-    
     WalkSpeed = 16,
     JumpPower = 50,
     SpeedEnabled = false,
     JumpEnabled = false,
-    
     FlyEnabled = false,
     FlySpeed = 50,
-    
     SpinBot = false,
     WalkMode = false
 }
 
-local FarmTab = Window:MakeTab({Name = "Auto Farm", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local VisualsTab = Window:MakeTab({Name = "Visuals", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local MovementTab = Window:MakeTab({Name = "Movement", Icon = "rbxassetid://4483345998", PremiumOnly = false})
-local SettingsTab = Window:MakeTab({Name = "Settings", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+--// 2. TEMA (ESTILO LOW HUB)
+local Theme = {
+    Background = Color3.fromRGB(20, 20, 20),
+    Sidebar = Color3.fromRGB(30, 30, 30),
+    Accent = Color3.fromRGB(255, 60, 60), -- Vermelho Neon
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(150, 150, 150)
+}
 
+--// 3. CRIAÇÃO DA UI (FEITA DO ZERO)
+if CoreGui:FindFirstChild("JR_HUB") then CoreGui.JR_HUB:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "JR_HUB"
+ScreenGui.ResetOnSpawn = false
+-- Tenta proteger a GUI (se o executor permitir)
+if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
+ScreenGui.Parent = CoreGui
+
+-- Janela Principal
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 550, 0, 350)
+MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
+MainFrame.BackgroundColor3 = Theme.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Cantos Arredondados
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 6)
+Corner.Parent = MainFrame
+
+-- Barra Lateral (Abas)
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 130, 1, 0)
+Sidebar.BackgroundColor3 = Theme.Sidebar
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 6)
+SidebarCorner.Parent = Sidebar
+
+-- Correção visual do canto direito da sidebar
+local SidebarFix = Instance.new("Frame")
+SidebarFix.BorderSizePixel = 0
+SidebarFix.BackgroundColor3 = Theme.Sidebar
+SidebarFix.Size = UDim2.new(0, 10, 1, 0)
+SidebarFix.Position = UDim2.new(1, -10, 0, 0)
+SidebarFix.Parent = Sidebar
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Text = "Low HUB"
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Theme.Accent
+Title.TextSize = 22
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.BackgroundTransparency = 1
+Title.Parent = Sidebar
+
+-- Container de Botões das Abas
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 1, -60)
+TabContainer.Position = UDim2.new(0, 0, 0, 60)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = Sidebar
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.Parent = TabContainer
+
+-- Área de Conteúdo (Onde ficam os botões)
+local ContentArea = Instance.new("Frame")
+ContentArea.Name = "ContentArea"
+ContentArea.Size = UDim2.new(1, -140, 1, -20)
+ContentArea.Position = UDim2.new(0, 140, 0, 10)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Parent = MainFrame
+
+-- Pasta para guardar as páginas
+local Pages = Instance.new("Folder")
+Pages.Name = "Pages"
+Pages.Parent = ContentArea
+
+--// FUNÇÕES VISUAIS AUXILIARES
+local currentTab = nil
+
+local function CreatePage(name)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.ScrollBarThickness = 2
+    Page.ScrollBarImageColor3 = Theme.Accent
+    Page.Visible = false
+    Page.Parent = Pages
+    
+    local Layout = Instance.new("UIListLayout")
+    Layout.Padding = UDim.new(0, 8)
+    Layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    Layout.Parent = Page
+    
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingTop = UDim.new(0, 5)
+    Padding.PaddingLeft = UDim.new(0, 5)
+    Padding.Parent = Page
+    
+    return Page
+end
+
+local function CreateTabBtn(name, pageObj)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.9, 0, 0, 35)
+    Btn.BackgroundColor3 = Theme.Background
+    Btn.Text = name
+    Btn.TextColor3 = Theme.TextDim
+    Btn.Font = Enum.Font.GothamSemibold
+    Btn.TextSize = 14
+    Btn.Parent = TabContainer
+    
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = Btn
+    
+    Btn.MouseButton1Click:Connect(function()
+        -- Resetar todos os botões
+        for _, child in ipairs(TabContainer:GetChildren()) do
+            if child:IsA("TextButton") then
+                TweenService:Create(child, TweenInfo.new(0.2), {TextColor3 = Theme.TextDim, BackgroundColor3 = Theme.Background}):Play()
+            end
+        end
+        -- Esconder todas as páginas
+        for _, child in ipairs(Pages:GetChildren()) do
+            child.Visible = false
+        end
+        
+        -- Ativar atual
+        TweenService:Create(Btn, TweenInfo.new(0.2), {TextColor3 = Theme.Accent, BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play()
+        pageObj.Visible = true
+    end)
+    
+    -- Selecionar o primeiro automaticamente
+    if currentTab == nil then
+        currentTab = Btn
+        Btn.TextColor3 = Theme.Accent
+        Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        pageObj.Visible = true
+    end
+end
+
+local function CreateToggle(parent, text, callback, default)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0.98, 0, 0, 40)
+    Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Frame.Parent = parent
+    
+    local FCorner = Instance.new("UICorner")
+    FCorner.CornerRadius = UDim.new(0, 6)
+    FCorner.Parent = Frame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Text = text
+    Label.TextColor3 = Theme.Text
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Position = UDim2.new(0.05, 0, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+    
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Size = UDim2.new(0, 24, 0, 24)
+    ToggleBtn.Position = UDim2.new(0.9, -24, 0.5, -12)
+    ToggleBtn.Text = ""
+    ToggleBtn.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(60, 60, 60)
+    ToggleBtn.Parent = Frame
+    
+    local TCorner = Instance.new("UICorner")
+    TCorner.CornerRadius = UDim.new(0, 4)
+    TCorner.Parent = ToggleBtn
+    
+    local toggled = default or false
+    
+    ToggleBtn.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        if toggled then
+            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Accent}):Play()
+        else
+            TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
+        end
+        callback(toggled)
+    end)
+end
+
+local function CreateSlider(parent, text, min, max, default, callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(0.98, 0, 0, 50)
+    Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Frame.Parent = parent
+    
+    local FCorner = Instance.new("UICorner")
+    FCorner.CornerRadius = UDim.new(0, 6)
+    FCorner.Parent = Frame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Text = text
+    Label.TextColor3 = Theme.Text
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 14
+    Label.Size = UDim2.new(1, 0, 0, 25)
+    Label.Position = UDim2.new(0.05, 0, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+    
+    local ValueLabel = Instance.new("TextLabel")
+    ValueLabel.Text = tostring(default)
+    ValueLabel.TextColor3 = Theme.TextDim
+    ValueLabel.Font = Enum.Font.Gotham
+    ValueLabel.TextSize = 14
+    ValueLabel.Size = UDim2.new(1, -20, 0, 25)
+    ValueLabel.BackgroundTransparency = 1
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Parent = Frame
+
+    local SliderBar = Instance.new("TextButton")
+    SliderBar.Text = ""
+    SliderBar.Size = UDim2.new(0.9, 0, 0, 6)
+    SliderBar.Position = UDim2.new(0.05, 0, 0.7, 0)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    SliderBar.AutoButtonColor = false
+    SliderBar.Parent = Frame
+    
+    local BarCorner = Instance.new("UICorner")
+    BarCorner.Parent = SliderBar
+    
+    local Fill = Instance.new("Frame")
+    Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
+    Fill.BackgroundColor3 = Theme.Accent
+    Fill.BorderSizePixel = 0
+    Fill.Parent = SliderBar
+    
+    local FillCorner = Instance.new("UICorner")
+    FillCorner.Parent = Fill
+    
+    local dragging = false
+    
+    local function update(input)
+        local SizeX = math.clamp((input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+        local Value = math.floor(min + ((max - min) * SizeX))
+        
+        TweenService:Create(Fill, TweenInfo.new(0.1), {Size = UDim2.new(SizeX, 0, 1, 0)}):Play()
+        ValueLabel.Text = tostring(Value)
+        callback(Value)
+    end
+    
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+local function CreateButton(parent, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0.98, 0, 0, 35)
+    Btn.BackgroundColor3 = Theme.Accent
+    Btn.Text = text
+    Btn.TextColor3 = Color3.new(1,1,1)
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 14
+    Btn.Parent = parent
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+--// 4. LÓGICA DO SCRIPT (FARM, ESP, ETC)
+
+-- Variáveis de Conexão
+local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
-ESP_Folder.Name = "ESP_Storage"
+ESP_Folder.Name = "ESP_Cache"
 
 local function getTargets()
     local targets = {}
@@ -148,229 +373,130 @@ end
 
 local function updateESP()
     ESP_Folder:ClearAllChildren()
-    
     if not getgenv().Settings.ESP_Enabled then return end
 
+    -- Itens
     for _, obj in ipairs(getTargets()) do
         if obj then
-            local highlight = Instance.new("Highlight")
-            highlight.Adornee = obj
-            highlight.FillColor = Color3.fromRGB(0, 255, 0)
-            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            highlight.FillTransparency = 0.5
-            highlight.Parent = ESP_Folder
+            local h = Instance.new("Highlight")
+            h.Adornee = obj
+            h.FillColor = Color3.fromRGB(0, 255, 0)
+            h.OutlineColor = Color3.fromRGB(255, 255, 255)
+            h.FillTransparency = 0.5
+            h.Parent = ESP_Folder
         end
     end
 
+    -- Players
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
-            
             if getgenv().Settings.ESP_Highlight then
-                local highlight = Instance.new("Highlight")
-                highlight.Adornee = plr.Character
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.5
-                highlight.Parent = ESP_Folder
+                local h = Instance.new("Highlight")
+                h.Adornee = plr.Character
+                h.FillColor = Theme.Accent
+                h.OutlineColor = Color3.new(1,1,1)
+                h.FillTransparency = 0.5
+                h.Parent = ESP_Folder
             end
-
             if getgenv().Settings.ESP_Names then
                 local bb = Instance.new("BillboardGui")
-                bb.Name = "ESP_NameTag"
                 bb.Adornee = plr.Character.Head
                 bb.Size = UDim2.new(0, 100, 0, 50)
                 bb.StudsOffset = Vector3.new(0, 2, 0)
                 bb.AlwaysOnTop = true
                 bb.Parent = ESP_Folder
-
-                local txt = Instance.new("TextLabel")
-                txt.Parent = bb
-                txt.BackgroundTransparency = 1
-                txt.Size = UDim2.new(1, 0, 1, 0)
-                txt.Text = plr.Name
-                txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-                txt.TextStrokeTransparency = 0
-                txt.Font = Enum.Font.GothamBold
-                txt.TextSize = 14
+                local t = Instance.new("TextLabel")
+                t.Parent = bb
+                t.BackgroundTransparency = 1
+                t.Size = UDim2.new(1,0,1,0)
+                t.Text = plr.Name
+                t.TextColor3 = Color3.new(1,1,1)
+                t.TextStrokeTransparency = 0
+                t.Font = Enum.Font.GothamBold
+                t.TextSize = 14
             end
         end
     end
 end
 
+-- Loop ESP Seguro
 task.spawn(function()
     while true do
-        if getgenv().Settings.ESP_Enabled then
-            updateESP()
-        end
+        if getgenv().Settings.ESP_Enabled then pcall(updateESP) end
         task.wait(1)
     end
 end)
 
-FarmTab:AddToggle({
-    Name = "Auto Farm Light",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.AutoFarm = Value
-        if Value then
-            toggleNoclip(true)
-            task.spawn(function()
-                while getgenv().Settings.AutoFarm do
-                    local lights = getTargets()
-                    
-                    if #lights == 0 and getgenv().Settings.AutoServerHop then
-                        if queue_on_teleport then
-                            queue_on_teleport([[
-                                wait(5)
-                                loadstring(game:HttpGet("https://raw.githubusercontent.com/joaopedrobn/script-rovibes/refs/heads/main/main.lua"))()
-                            ]])
-                        end
-                        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-                        break
-                    end
+--// 5. CONSTRUINDO AS PÁGINAS
 
-                    for _, obj in ipairs(lights) do
-                        if not getgenv().Settings.AutoFarm then break end
-                        
-                        local char = LocalPlayer.Character
-                        if char and char:FindFirstChild("HumanoidRootPart") then
-                            local targetCFrame = obj:IsA("Model") and obj:GetPivot() or obj.CFrame
-                            pcall(function()
-                                char:PivotTo(targetCFrame + Vector3.new(0, 3, 0))
-                            end)
-                        end
-                        task.wait(getgenv().Settings.TPDelay)
-                    end
-                    task.wait(0.1)
+-- PAGINA 1: FARM
+local PageFarm = CreatePage("PageFarm")
+CreateTabBtn("Farm", PageFarm)
+
+CreateToggle(PageFarm, "Auto Farm Light", function(val)
+    getgenv().Settings.AutoFarm = val
+    if val then
+        toggleNoclip(true)
+        task.spawn(function()
+            while getgenv().Settings.AutoFarm do
+                local lights = getTargets()
+                if #lights == 0 and getgenv().Settings.AutoServerHop then
+                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                    break
                 end
-                toggleNoclip(false)
-            end)
-        else
+                for _, obj in ipairs(lights) do
+                    if not getgenv().Settings.AutoFarm then break end
+                    local char = LocalPlayer.Character
+                    if char then
+                        local target = obj:IsA("Model") and obj:GetPivot() or obj.CFrame
+                        pcall(function() char:PivotTo(target + Vector3.new(0,3,0)) end)
+                    end
+                    task.wait(getgenv().Settings.TPDelay)
+                end
+                task.wait(0.1)
+            end
             toggleNoclip(false)
-        end
-    end    
-})
-
-FarmTab:AddToggle({
-    Name = "Auto Server Hop",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.AutoServerHop = Value
-    end    
-})
-
-FarmTab:AddTextbox({
-    Name = "TP para Player",
-    Default = "",
-    TextDisappear = true,
-    Callback = function(Value)
-        local targetName = Value:lower()
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr.Name:lower():match(targetName) or plr.DisplayName:lower():match(targetName) then
-                if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                    local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if myRoot then
-                        myRoot.CFrame = plr.Character.HumanoidRootPart.CFrame
-                    end
-                end
-                break
-            end
-        end
+        end)
+    else
+        toggleNoclip(false)
     end
-})
+end, false)
 
-VisualsTab:AddToggle({
-    Name = "Master ESP Switch",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.ESP_Enabled = Value
-        if not Value then ESP_Folder:ClearAllChildren() end
-        updateESP()
-    end    
-})
+CreateToggle(PageFarm, "Auto Server Hop", function(val)
+    getgenv().Settings.AutoServerHop = val
+end, false)
 
-VisualsTab:AddToggle({
-    Name = "Show Highlights (Wall)",
-    Default = true,
-    Callback = function(Value)
-        getgenv().Settings.ESP_Highlight = Value
-        updateESP()
-    end    
-})
+CreateSlider(PageFarm, "Delay TP (Segundos)", 0, 2, 0.5, function(val)
+    getgenv().Settings.TPDelay = val
+end)
 
-VisualsTab:AddToggle({
-    Name = "Show Names",
-    Default = true,
-    Callback = function(Value)
-        getgenv().Settings.ESP_Names = Value
-        updateESP()
-    end    
-})
+-- PAGINA 2: VISUALS
+local PageVisuals = CreatePage("PageVisuals")
+CreateTabBtn("Visuals", PageVisuals)
 
-MovementTab:AddToggle({
-    Name = "Enable Fly",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.FlyEnabled = Value
-        
-        if Value then
-            local BodyGyro = Instance.new("BodyGyro")
-            BodyGyro.P = 9e4
-            BodyGyro.Parent = LocalPlayer.Character.HumanoidRootPart
-            
-            local BodyVelocity = Instance.new("BodyVelocity")
-            BodyVelocity.Parent = LocalPlayer.Character.HumanoidRootPart
-            BodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            
-            local connection
-            connection = RunService.RenderStepped:Connect(function()
-                if not getgenv().Settings.FlyEnabled or not LocalPlayer.Character then
-                    BodyVelocity:Destroy()
-                    BodyGyro:Destroy()
-                    connection:Disconnect()
-                    return
-                end
-                
-                LocalPlayer.Character.Humanoid.PlatformStand = true
-                BodyGyro.CFrame = Workspace.CurrentCamera.CFrame
-                
-                local speed = getgenv().Settings.FlySpeed
-                local moveDir = Vector3.new()
-                
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Workspace.CurrentCamera.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Workspace.CurrentCamera.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Workspace.CurrentCamera.CFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Workspace.CurrentCamera.CFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                
-                BodyVelocity.Velocity = moveDir * speed
-            end)
-        else
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.PlatformStand = false
-            end
-        end
-    end    
-})
+CreateToggle(PageVisuals, "Ativar ESP (Master)", function(val)
+    getgenv().Settings.ESP_Enabled = val
+    if not val then ESP_Folder:ClearAllChildren() end
+    updateESP()
+end, false)
 
-MovementTab:AddSlider({
-    Name = "Fly Speed",
-    Min = 10,
-    Max = 200,
-    Default = 50,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "Speed",
-    Callback = function(Value)
-        getgenv().Settings.FlySpeed = Value
-    end    
-})
+CreateToggle(PageVisuals, "ESP Box/Highlight", function(val)
+    getgenv().Settings.ESP_Highlight = val
+    updateESP()
+end, true)
 
-MovementTab:AddToggle({
-    Name = "Speed Hack",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.SpeedEnabled = Value
+CreateToggle(PageVisuals, "ESP Nomes", function(val)
+    getgenv().Settings.ESP_Names = val
+    updateESP()
+end, true)
+
+-- PAGINA 3: MOVEMENT
+local PageMove = CreatePage("PageMove")
+CreateTabBtn("Movement", PageMove)
+
+CreateToggle(PageMove, "Speed Hack", function(val)
+    getgenv().Settings.SpeedEnabled = val
+    task.spawn(function()
         while getgenv().Settings.SpeedEnabled do
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().Settings.WalkSpeed
@@ -378,27 +504,16 @@ MovementTab:AddToggle({
             task.wait()
         end
         if LocalPlayer.Character then LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
-    end    
-})
+    end)
+end, false)
 
-MovementTab:AddSlider({
-    Name = "Walk Speed",
-    Min = 16,
-    Max = 300,
-    Default = 16,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "Speed",
-    Callback = function(Value)
-        getgenv().Settings.WalkSpeed = Value
-    end    
-})
+CreateSlider(PageMove, "Velocidade", 16, 200, 16, function(val)
+    getgenv().Settings.WalkSpeed = val
+end)
 
-MovementTab:AddToggle({
-    Name = "Super Jump",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.JumpEnabled = Value
+CreateToggle(PageMove, "Super Jump", function(val)
+    getgenv().Settings.JumpEnabled = val
+    task.spawn(function()
         while getgenv().Settings.JumpEnabled do
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                 LocalPlayer.Character.Humanoid.UseJumpPower = true
@@ -407,89 +522,71 @@ MovementTab:AddToggle({
             task.wait()
         end
         if LocalPlayer.Character then LocalPlayer.Character.Humanoid.JumpPower = 50 end
-    end    
-})
+    end)
+end, false)
 
-MovementTab:AddSlider({
-    Name = "Jump Power",
-    Min = 50,
-    Max = 500,
-    Default = 50,
-    Color = Color3.fromRGB(255,255,255),
-    Increment = 1,
-    ValueName = "Power",
-    Callback = function(Value)
-        getgenv().Settings.JumpPower = Value
-    end    
-})
+CreateSlider(PageMove, "Força Pulo", 50, 500, 50, function(val)
+    getgenv().Settings.JumpPower = val
+end)
 
-MovementTab:AddToggle({
-    Name = "SpinBot",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.SpinBot = Value
-        if Value then
-            task.spawn(function()
-                while getgenv().Settings.SpinBot do
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(50), 0)
-                    end
-                    task.wait()
+-- PAGINA 4: SETTINGS
+local PageSettings = CreatePage("PageSettings")
+CreateTabBtn("Settings", PageSettings)
+
+CreateButton(PageSettings, "MINIMIZAR HUB", function()
+    MainFrame.Visible = false
+    -- Criar botão pequeno
+    local MiniBtn = Instance.new("TextButton")
+    MiniBtn.Name = "MiniBtn"
+    MiniBtn.Size = UDim2.new(0, 100, 0, 40)
+    MiniBtn.Position = UDim2.new(0, 10, 0.5, 0)
+    MiniBtn.BackgroundColor3 = Theme.Accent
+    MiniBtn.Text = "ABRIR"
+    MiniBtn.TextColor3 = Theme.Text
+    MiniBtn.Font = Enum.Font.GothamBold
+    MiniBtn.TextSize = 14
+    MiniBtn.Parent = ScreenGui
+    
+    local MCorner = Instance.new("UICorner")
+    MCorner.CornerRadius = UDim.new(0, 6)
+    MCorner.Parent = MiniBtn
+    
+    -- Draggable no MiniBtn
+    local dragToggle = nil
+    local dragStart = nil
+    local startPos = nil
+    MiniBtn.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+            dragToggle = true
+            dragStart = input.Position
+            startPos = MiniBtn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragToggle = false
                 end
             end)
         end
-    end    
-})
-
-MovementTab:AddToggle({
-    Name = "Walk Mode (PC)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().Settings.WalkMode = Value
-        if Value then
-             getgenv().Settings.SpeedEnabled = false 
-             task.spawn(function()
-                while getgenv().Settings.WalkMode do
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        LocalPlayer.Character.Humanoid.WalkSpeed = 8
-                    end
-                    task.wait()
-                end
-                if LocalPlayer.Character then LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
-             end)
-        else
-            if LocalPlayer.Character then LocalPlayer.Character.Humanoid.WalkSpeed = 16 end
+    end)
+    MiniBtn.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            if dragToggle then
+                MiniBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
         end
-    end    
-})
+    end)
+    
+    MiniBtn.MouseButton1Click:Connect(function()
+        MainFrame.Visible = true
+        MiniBtn:Destroy()
+    end)
+end)
 
---// 3. BOTÃO DE MINIMIZAR NA UI
-SettingsTab:AddButton({
-    Name = "Minimizar Janela",
-    Callback = function()
-        -- Esconde o Orion
-        OrionLib.Instance.Enabled = false
-        -- Mostra o botãozinho
-        MiniGui.Enabled = true
-        
-        OrionLib:MakeNotification({
-            Name = "Minimizado",
-            Content = "O Hub foi minimizado. Clique no botão pequeno para abrir.",
-            Image = "rbxassetid://4483345998",
-            Time = 5
-        })
-    end    
-})
+CreateButton(PageSettings, "DESTRUIR GUI (Fechar)", function()
+    ScreenGui:Destroy()
+    ESP_Folder:Destroy()
+    getgenv().Settings.AutoFarm = false
+end)
 
-SettingsTab:AddButton({
-    Name = "Unload GUI",
-    Callback = function()
-        OrionLib:Destroy()
-        MiniGui:Destroy() -- Destrói o botão minimizado também
-        ESP_Folder:Destroy()
-        getgenv().Settings.AutoFarm = false
-        toggleNoclip(false)
-    end    
-})
-
-OrionLib:Init()
+-- Init
+print("JR HUB CARREGADO - MODO STANDALONE")
