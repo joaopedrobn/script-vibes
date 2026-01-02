@@ -731,18 +731,6 @@ end, false)
 local PageSettings = CreatePage("PageSettings")
 CreateTabBtn("Configurações", PageSettings)
 
-CreateToggle(PageSettings, "Anti-Logs Voice (Limpeza)", function(val)
-    getgenv().Settings.AntiVoiceLogs = val
-    if val then
-        task.spawn(function()
-            while getgenv().Settings.AntiVoiceLogs do
-                LogService:ClearOutput()
-                task.wait(1)
-            end
-        end)
-    end
-end, false)
-
 CreateButton(PageSettings, "Fechar HUB", function()
     ScreenGui:Destroy()
     ESP_Folder:Destroy()
