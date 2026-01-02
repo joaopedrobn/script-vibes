@@ -1,7 +1,3 @@
---[[
-    DESCRIÇÃO: AutoFarm + ESP + Player TP + Server Hop
-]]
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
@@ -16,7 +12,7 @@ getgenv().Settings = {
     ESPEnabled = false,
     TargetName = "LightTemplate",
     TPDelay = 0.5,
-    AutoServerHop = true
+    AutoServerHop = false
 }
 
 local Connections = {}
@@ -30,7 +26,7 @@ if syn and syn.protect_gui then syn.protect_gui(ScreenGui) end
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 300, 0, 350)
+MainFrame.Size = UDim2.new(0, 300, 0, 385)
 MainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
@@ -99,24 +95,47 @@ end
 
 local function updateESP()
     ESP_Folder:ClearAllChildren()
-  
+    
     if not getgenv().Settings.ESPEnabled then return end
 
     for _, obj in ipairs(getTargets()) do
-        local highlight = Instance.new("Highlight")
-        highlight.Adornee = obj
-        highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Verde
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.5
-        highlight.Parent = ESP_Folder
+        if obj then
+            local highlight = Instance.new("Highlight")
+            highlight.Adornee = obj
+            highlight.FillColor = Color3.fromRGB(0, 255, 0)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.FillTransparency = 0.5
+            highlight.Parent = ESP_Folder
+        end
     end
 
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
+            
             local highlight = Instance.new("Highlight")
             highlight.Adornee = plr.Character
-            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Vermelho
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.FillTransparency = 0.5
             highlight.Parent = ESP_Folder
+
+            local bb = Instance.new("BillboardGui")
+            bb.Name = "ESP_NameTag"
+            bb.Adornee = plr.Character.Head
+            bb.Size = UDim2.new(0, 100, 0, 50)
+            bb.StudsOffset = Vector3.new(0, 2, 0)
+            bb.AlwaysOnTop = true
+            bb.Parent = ESP_Folder
+
+            local txt = Instance.new("TextLabel")
+            txt.Parent = bb
+            txt.BackgroundTransparency = 1
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.Text = plr.Name
+            txt.TextColor3 = Color3.fromRGB(255, 255, 255)
+            txt.TextStrokeTransparency = 0
+            txt.Font = Enum.Font.GothamBold
+            txt.TextSize = 14
         end
     end
 end
@@ -159,12 +178,10 @@ local function startFarm()
             local lights = getTargets()
             
             if #lights == 0 and getgenv().Settings.AutoServerHop then
-                print("DEBUG: Acabaram os itens, trocando de servidor...")
-                
                 if queue_on_teleport then
                     queue_on_teleport([[
                         wait(5)
-                        loadstring(game:HttpGet("https://raw.githubusercontent.com/flickzzzzzzzzz/rovibeslixo/main/rovibespodre"))()
+                        loadstring(game:HttpGet("https://raw.githubusercontent.com/joaopedrobn/script-rovibes/refs/heads/main/main.lua"))()
                     ]])
                 end
                 
@@ -173,7 +190,7 @@ local function startFarm()
             end
 
             for _, obj in ipairs(lights) do
-                if not getgenv().Settings.AutoFarm then break end -- Para se desligar
+                if not getgenv().Settings.AutoFarm then break end
                 
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("HumanoidRootPart") then
@@ -209,6 +226,17 @@ createButton("Toggle AutoFarm: OFF", function(btn)
     end
 end)
 
+createButton("AutoServer Hop: OFF", function(btn)
+    getgenv().Settings.AutoServerHop = not getgenv().Settings.AutoServerHop
+    if getgenv().Settings.AutoServerHop then
+        btn.Text = "AutoServer Hop: ON"
+        btn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    else
+        btn.Text = "AutoServer Hop: OFF"
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end
+end)
+
 createButton("Toggle ESP: OFF", function(btn)
     getgenv().Settings.ESPEnabled = not getgenv().Settings.ESPEnabled
     if getgenv().Settings.ESPEnabled then
@@ -229,4 +257,4 @@ createButton("Destruir GUI", function()
     toggleNoclip(false)
 end)
 
-print("ROVIBES HUB v2 CARREGADO COM SUCESSO")
+print("FLICKZ HUB v2 CARREGADO COM SUCESSO")
