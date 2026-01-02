@@ -472,6 +472,20 @@ local function CreateInput(parent, placeholder, callback)
     end)
 end
 
+local function TPToName(name)
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v.Name:lower():find(name:lower()) then
+            if v:IsA("Model") and LocalPlayer.Character then
+                LocalPlayer.Character:PivotTo(v:GetPivot() + Vector3.new(0,3,0))
+                return
+            elseif v:IsA("BasePart") and LocalPlayer.Character then
+                LocalPlayer.Character:PivotTo(v.CFrame + Vector3.new(0,3,0))
+                return
+            end
+        end
+    end
+end
+
 local Connections = {}
 local ESP_Folder = Instance.new("Folder", CoreGui)
 ESP_Folder.Name = "ESP_Cache"
@@ -697,6 +711,7 @@ CreateButton(PageTeleport, "Teleportar (Player)", function()
     end
 end)
 
+CreateSection(PageTeleport, "LOJA/ITENS")
 CreateButton(PageTeleport, "Ir para Próximo Baú/Chest", function()
     local list = getSortedTargets("Bau", "Chest")
     if #list > 0 then
@@ -717,6 +732,17 @@ CreateButton(PageTeleport, "Ir para Próximo Osso/Bone", function()
             getgenv().BoneIndex = getgenv().BoneIndex + 1
         end
     end
+end)
+
+CreateSection(PageTeleport, "LOCAIS (FIXOS)")
+CreateButton(PageTeleport, "Sacrifício (Altar)", function() TPToName("Altar") or TPToName("Sacrif") end)
+CreateButton(PageTeleport, "Ponte (Bridge)", function() TPToName("Bridge") or TPToName("Ponte") end)
+CreateButton(PageTeleport, "Ilha (Island)", function() TPToName("Island") or TPToName("Ilha") end)
+CreateButton(PageTeleport, "Neve (Snow)", function() TPToName("Snow") or TPToName("Neve") end)
+CreateButton(PageTeleport, "Céu (Sky)", function() 
+    if LocalPlayer.Character then 
+        LocalPlayer.Character:PivotTo(CFrame.new(0, 500, 0)) 
+    end 
 end)
 
 local PageMove = CreatePage("PageMove")
@@ -896,6 +922,12 @@ end)
 
 CreateButton(PageSettings, "Rejoin Server (Reentrar)", function()
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end)
+
+CreateButton(PageSettings, "Resetar Personagem (Suicídio)", function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.Health = 0
+    end
 end)
 
 CreateButton(PageSettings, "Fechar HUB", function()
